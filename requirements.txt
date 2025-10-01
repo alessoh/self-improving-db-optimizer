@@ -1,4 +1,3 @@
-python>=3.10
 torch>=2.0.0
 numpy>=1.24.0
 scipy>=1.10.0
@@ -22,6 +21,7 @@ pytest-mock>=3.10.0
 loguru>=0.7.0
 joblib>=1.2.0
 numba>=0.57.0
+psutil>=5.9.0
 
 # Optional: Experiment Tracking
 # mlflow>=2.3.0

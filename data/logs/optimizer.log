@@ -1,0 +1,13 @@
+2025-10-01 13:33:35 - root - INFO - ============================================================
+2025-10-01 13:33:35 - root - INFO - Logging system initialized
+2025-10-01 13:33:35 - root - INFO - Log level: INFO
+2025-10-01 13:33:35 - root - INFO - Log directory: data\logs
+2025-10-01 13:33:35 - root - INFO - ============================================================
+2025-10-01 13:33:35 - root - INFO - ============================================================
+2025-10-01 13:33:35 - root - INFO - Logging system initialized
+2025-10-01 13:33:35 - root - INFO - Log level: INFO
+2025-10-01 13:33:35 - root - INFO - Log directory: data\logs
+2025-10-01 13:33:35 - root - INFO - ============================================================
+2025-10-01 13:33:35 - main - INFO - System Orchestrator initialized
+2025-10-01 13:33:35 - main - INFO - Initializing system components...
+2025-10-01 13:33:35 - main - INFO - Connecting to database...

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Improving Database Query Optimizer - Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.18.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-card {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .status-card h3 {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .status-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-box {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .chart-box h2 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .chart {
+            height: 300px;
+        }
+        
+        .running {
+            color: #4caf50;
+        }
+        
+        .stopped {
+            color: #f44336;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Self-Improving Database Query Optimizer</h1>
+        <p>Three-Level Autonomous Learning System</p>
+    </div>
+    
+    <div class="status-bar">
+        <div class="status-card">
+            <h3>System Status</h3>
+            <div class="value running pulse" id="status">Running</div>
+        </div>
+        <div class="status-card">
+            <h3>Current Phase</h3>
+            <div class="value" id="phase">Initializing...</div>
+        </div>
+        <div class="status-card">
+            <h3>Queries Executed</h3>
+            <div class="value" id="queries">0</div>
+        </div>
+        <div class="status-card">
+            <h3>Avg Latency</h3>
+            <div class="value" id="latency">0ms</div>
+        </div>
+    </div>
+    
+    <div class="charts-container">
+        <div class="chart-box">
+            <h2>Query Latency Over Time</h2>
+            <div id="latency-chart" class="chart"></div>
+        </div>
+        
+        <div class="chart-box">
+            <h2>Performance by Phase</h2>
+            <div id="phase-chart" class="chart"></div>
+        </div>
+        
+        <div class="chart-box">
+            <h2>Resource Usage</h2>
+            <div id="resource-chart" class="chart"></div>
+        </div>
+        
+        <div class="chart-box">
+            <h2>Success Rate</h2>
+            <div id="success-chart" class="chart"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh interval
+        const REFRESH_INTERVAL = 5000; // 5 seconds
+        
+        // Initialize empty charts
+        function initCharts() {
+            Plotly.newPlot('latency-chart', [], {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#eee' },
+                xaxis: { title: 'Time' },
+                yaxis: { title: 'Latency (ms)' }
+            });
+            
+            Plotly.newPlot('phase-chart', [], {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#eee' }
+            });
+            
+            Plotly.newPlot('resource-chart', [], {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#eee' }
+            });
+            
+            Plotly.newPlot('success-chart', [], {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#eee' }
+            });
+        }
+        
+        // Update status
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.running) {
+                    document.getElementById('status').textContent = 'Running';
+                    document.getElementById('status').className = 'value running pulse';
+                } else {
+                    document.getElementById('status').textContent = 'Stopped';
+                    document.getElementById('status').className = 'value stopped';
+                }
+                
+                document.getElementById('phase').textContent = data.current_phase || 'Unknown';
+                document.getElementById('queries').textContent = data.queries_executed || 0;
+                document.getElementById('latency').textContent = 
+                    (data.avg_latency || 0).toFixed(1) + 'ms';
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+        
+        // Update charts
+        async function updateCharts() {
+            try {
+                // Latency time series
+                const timeseriesResponse = await fetch('/api/metrics/timeseries?hours=24');
+                const timeseriesData = await timeseriesResponse.json();
+                
+                if (timeseriesData.data && timeseriesData.data.length > 0) {
+                    const timestamps = timeseriesData.data.map(d => 
+                        new Date(d.timestamp * 1000)
+                    );
+                    
+                    Plotly.react('latency-chart', [
+                        {
+                            x: timestamps,
+                            y: timeseriesData.data.map(d => d.avg_latency),
+                            name: 'Average',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#667eea' }
+                        },
+                        {
+                            x: timestamps,
+                            y: timeseriesData.data.map(d => d.p99_latency),
+                            name: 'P99',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#f093fb', dash: 'dash' }
+                        }
+                    ], {
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: '#eee' },
+                        xaxis: { title: 'Time' },
+                        yaxis: { title: 'Latency (ms)' }
+                    });
+                }
+                
+                // Phase comparison
+                const phaseResponse = await fetch('/api/metrics/phase_comparison');
+                const phaseData = await phaseResponse.json();
+                
+                if (phaseData.data && phaseData.data.length > 0) {
+                    Plotly.react('phase-chart', [{
+                        x: phaseData.data.map(d => d.phase),
+                        y: phaseData.data.map(d => d.avg_latency),
+                        type: 'bar',
+                        marker: { color: '#667eea' }
+                    }], {
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: '#eee' },
+                        xaxis: { title: 'Phase' },
+                        yaxis: { title: 'Avg Latency (ms)' }
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating charts:', error);
+            }
+        }
+        
+        // Initialize
+        initCharts();
+        updateStatus();
+        updateCharts();
+        
+        // Auto-refresh
+        setInterval(() => {
+            updateStatus();
+            updateCharts();
+        }, REFRESH_INTERVAL);
+    </script>
+</body>
+</html>

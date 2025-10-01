@@ -48,6 +48,7 @@ Add C:\Program Files\PostgreSQL\14\bin to PATH
 Verify installation:
 ## Quick Start
 ### 1. Install PostgreSQL 14+ and set password
+$env:Path += ";C:\Program Files\PostgreSQL\14\bin"
 ### 2. Clone repo and setup
 git clone https://github.com/alessoh/self-improving-db-optimizer
 cd self-improving-db-optimizer

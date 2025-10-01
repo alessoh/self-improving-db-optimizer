@@ -2,7 +2,7 @@ database:
   host: localhost
   port: 5432
   user: postgres
-  password: YOUR_PASSWORD_HERE  # CHANGE THIS!
+  password: Post2825p! # CHANGE THIS!
   dbname: query_optimizer_demo
   max_connections: 10
   connection_timeout: 30
