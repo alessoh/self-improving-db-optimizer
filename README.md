@@ -184,60 +184,115 @@ Meta-learner decisions
 
 ### Project Structure
 self-improving-db-optimizer/
+
 │
 ├── README.md                 # This file
+
 ├── requirements.txt          # Python dependencies
+
 ├── config.yaml              # Configuration file
+
 ├── config.yaml.example      # Example configuration
+
 │
+
 ├── main.py                  # Main orchestrator
+
 ├── setup_database.py        # Database initialization
+
 ├── run_demo.py             # Demonstration script
+
 │
+
 ├── core/
+
 │   ├── __init__.py
+
 │   ├── query_optimizer.py   # Level 0: RL agent
+
 │   ├── policy_learner.py    # Level 1: Policy optimization
+
 │   ├── meta_learner.py      # Level 2: Meta-learning
+
 │   ├── models.py            # Neural network definitions
+
 │   └── safety_monitor.py    # Safety mechanisms
+
 │
+
 ├── database/
+
 │   ├── __init__.py
+
 │   ├── database_manager.py  # Database operations
+
 │   ├── workload_generator.py # Synthetic workload
+
 │   └── schema.sql           # Database schema
+
 │
+
 ├── telemetry/
+
 │   ├── __init__.py
+
 │   ├── collector.py         # Metrics collection
+
 │   └── storage.py          # Telemetry storage
+
 │
 ├── dashboard/
+
 │   ├── __init__.py
+
 │   ├── app.py              # Flask application
+
 │   ├── templates/          # HTML templates
+
 │   │   └── index.html
+
 │   └── static/            # CSS, JS, images
+
 │       ├── css/
+
 │       │   └── style.css
+
 │       └── js/
+
 │           └── charts.js
+
 │
+
 ├── utils/
+
 │   ├── __init__.py
+
 │   ├── logger.py           # Logging utilities
+
 │   └── metrics.py         # Performance metrics
+
 │
+
 ├── tests/
+
 │   ├── __init__.py
+
 │   ├── test_optimizer.py
+
 │   ├── test_learner.py
+
 │   └── test_safety.py
+
 │
+
 └── data/                   # Generated data directory
+
     ├── telemetry.db       # SQLite telemetry database
+
     ├── policies/          # Saved policy checkpoints
+
     └── logs/             # System logs
+
 Running Tests
+
 Run the test suite to verify installation:
