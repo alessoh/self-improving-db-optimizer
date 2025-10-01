@@ -1,289 +1,198 @@
 import os
-import sys
-from pathlib import Path
-from flask import Flask, render_template, jsonify, request
-from flask_cors import CORS
-import yaml
-import time
-from datetime import datetime, timedelta
-import sqlite3
 import json
+from flask import Flask, render_template, jsonify
+from datetime import datetime
+import sqlite3
+from typing import Dict, List, Optional
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+app = Flask(__name__, 
+            template_folder='dashboard/templates',
+            static_folder='dashboard/static')
 
-from telemetry.storage import TelemetryStorage
-from utils.metrics import MetricsCalculator
-
-
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)
-
-# Global state
-config = None
-telemetry_storage = None
-metrics_calculator = None
-
-
-def load_config(config_path: str = "config.yaml"):
-    """Load configuration."""
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
-
-
-def init_dashboard():
-    """Initialize dashboard components."""
-    global config, telemetry_storage, metrics_calculator
+class DashboardData:
+    """Fetches and processes data for the dashboard."""
     
-    config = load_config()
-    telemetry_storage = TelemetryStorage(config)
-    metrics_calculator = MetricsCalculator(config)
+    def __init__(self, db_path: str = "data/telemetry.db"):
+        self.db_path = db_path
+    
+    def get_connection(self):
+        """Get database connection."""
+        if not os.path.exists(self.db_path):
+            return None
+        return sqlite3.connect(self.db_path)
+    
+    def get_recent_metrics(self, limit: int = 100) -> List[Dict]:
+        """Get recent query metrics."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT timestamp, latency_ms, success, phase
+                FROM query_metrics
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'timestamp': row[0],
+                    'latency_ms': row[1],
+                    'success': row[2],
+                    'phase': row[3]
+                })
+            
+            return results
+        finally:
+            conn.close()
+    
+    def get_phase_summary(self) -> Dict:
+        """Get summary statistics by phase."""
+        conn = self.get_connection()
+        if not conn:
+            return {}
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    phase,
+                    COUNT(*) as query_count,
+                    AVG(latency_ms) as avg_latency,
+                    MIN(latency_ms) as min_latency,
+                    MAX(latency_ms) as max_latency,
+                    SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as success_rate
+                FROM query_metrics
+                GROUP BY phase
+                ORDER BY MIN(timestamp)
+            """)
+            
+            phases = {}
+            for row in cursor.fetchall():
+                phases[row[0]] = {
+                    'query_count': row[1],
+                    'avg_latency': round(row[2], 2) if row[2] else 0,
+                    'min_latency': round(row[3], 2) if row[3] else 0,
+                    'max_latency': round(row[4], 2) if row[4] else 0,
+                    'success_rate': round(row[5], 2) if row[5] else 0
+                }
+            
+            return phases
+        finally:
+            conn.close()
+    
+    def get_learning_stats(self) -> Dict:
+        """Get learning statistics."""
+        conn = self.get_connection()
+        if not conn:
+            return {}
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Get policy updates
+            cursor.execute("SELECT COUNT(*) FROM policy_updates")
+            policy_updates = cursor.fetchone()[0]
+            
+            # Get meta-learning runs
+            cursor.execute("SELECT COUNT(*) FROM meta_learning_runs")
+            meta_runs = cursor.fetchone()[0]
+            
+            # Get latest losses
+            cursor.execute("""
+                SELECT loss, timestamp 
+                FROM policy_updates 
+                ORDER BY timestamp DESC 
+                LIMIT 1
+            """)
+            latest_loss = cursor.fetchone()
+            
+            return {
+                'policy_updates': policy_updates,
+                'meta_learning_runs': meta_runs,
+                'latest_loss': round(latest_loss[0], 6) if latest_loss else None,
+                'latest_loss_time': latest_loss[1] if latest_loss else None
+            }
+        finally:
+            conn.close()
+    
+    def get_latency_distribution(self) -> Dict:
+        """Get latency percentiles."""
+        conn = self.get_connection()
+        if not conn:
+            return {}
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT latency_ms
+                FROM query_metrics
+                ORDER BY latency_ms
+            """)
+            
+            latencies = [row[0] for row in cursor.fetchall()]
+            if not latencies:
+                return {}
+            
+            import numpy as np
+            return {
+                'p50': round(np.percentile(latencies, 50), 2),
+                'p95': round(np.percentile(latencies, 95), 2),
+                'p99': round(np.percentile(latencies, 99), 2),
+                'p999': round(np.percentile(latencies, 99.9), 2)
+            }
+        finally:
+            conn.close()
 
+dashboard_data = DashboardData()
 
 @app.route('/')
 def index():
-    """Main dashboard page."""
+    """Render main dashboard page."""
     return render_template('index.html')
 
+@app.route('/api/metrics')
+def api_metrics():
+    """API endpoint for recent metrics."""
+    metrics = dashboard_data.get_recent_metrics(limit=200)
+    return jsonify(metrics)
+
+@app.route('/api/phase-summary')
+def api_phase_summary():
+    """API endpoint for phase summary."""
+    summary = dashboard_data.get_phase_summary()
+    return jsonify(summary)
+
+@app.route('/api/learning-stats')
+def api_learning_stats():
+    """API endpoint for learning statistics."""
+    stats = dashboard_data.get_learning_stats()
+    return jsonify(stats)
+
+@app.route('/api/latency-distribution')
+def api_latency_distribution():
+    """API endpoint for latency distribution."""
+    distribution = dashboard_data.get_latency_distribution()
+    return jsonify(distribution)
 
 @app.route('/api/status')
-def get_status():
-    """Get current system status."""
-    try:
-        # Get recent metrics
-        recent_metrics = telemetry_storage.get_recent_metrics(minutes=5)
-        
-        if recent_metrics:
-            latest = recent_metrics[-1]
-            summary = metrics_calculator.calculate_summary(recent_metrics)
-            
-            status = {
-                'timestamp': datetime.now().isoformat(),
-                'running': True,
-                'current_phase': latest.get('phase', 'unknown'),
-                'queries_executed': len(recent_metrics),
-                'avg_latency': summary['avg_latency'],
-                'p99_latency': summary['p99_latency'],
-                'success_rate': summary['success_rate'],
-                'cache_hit_rate': summary.get('cache_hit_rate', 0)
-            }
-        else:
-            status = {
-                'timestamp': datetime.now().isoformat(),
-                'running': False,
-                'message': 'No recent data'
-            }
-            
-        return jsonify(status)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+def api_status():
+    """API endpoint for system status."""
+    return jsonify({
+        'status': 'running',
+        'timestamp': datetime.now().isoformat(),
+        'db_exists': os.path.exists(dashboard_data.db_path)
+    })
 
-
-@app.route('/api/metrics/timeseries')
-def get_metrics_timeseries():
-    """Get time series metrics for charting."""
-    try:
-        hours = float(request.args.get('hours', 24))
-        metrics = telemetry_storage.get_recent_metrics(hours=hours)
-        
-        if not metrics:
-            return jsonify({'data': []})
-        
-        # Aggregate by time windows
-        window_size = 60  # seconds
-        aggregated = []
-        current_window = []
-        current_time = metrics[0]['timestamp']
-        
-        for metric in metrics:
-            if metric['timestamp'] - current_time > window_size:
-                if current_window:
-                    summary = metrics_calculator.calculate_summary(current_window)
-                    aggregated.append({
-                        'timestamp': current_time,
-                        'avg_latency': summary['avg_latency'],
-                        'p50_latency': summary['p50_latency'],
-                        'p95_latency': summary['p95_latency'],
-                        'p99_latency': summary['p99_latency'],
-                        'success_rate': summary['success_rate']
-                    })
-                current_window = []
-                current_time = metric['timestamp']
-            current_window.append(metric)
-        
-        # Add final window
-        if current_window:
-            summary = metrics_calculator.calculate_summary(current_window)
-            aggregated.append({
-                'timestamp': current_time,
-                'avg_latency': summary['avg_latency'],
-                'p50_latency': summary['p50_latency'],
-                'p95_latency': summary['p95_latency'],
-                'p99_latency': summary['p99_latency'],
-                'success_rate': summary['success_rate']
-            })
-        
-        return jsonify({'data': aggregated})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/metrics/phase_comparison')
-def get_phase_comparison():
-    """Get performance comparison across phases."""
-    try:
-        phases = ['baseline', 'level0_learning', 'level1_learning', 'level2_learning']
-        comparison = []
-        
-        for phase in phases:
-            metrics = telemetry_storage.get_phase_metrics(phase)
-            if metrics:
-                summary = metrics_calculator.calculate_summary(metrics)
-                comparison.append({
-                    'phase': phase,
-                    'avg_latency': summary['avg_latency'],
-                    'p99_latency': summary['p99_latency'],
-                    'queries': len(metrics),
-                    'success_rate': summary['success_rate']
-                })
-        
-        return jsonify({'data': comparison})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/learning/policy_updates')
-def get_policy_updates():
-    """Get policy update history."""
-    try:
-        updates = telemetry_storage.get_policy_updates(limit=50)
-        return jsonify({'data': updates})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/learning/meta_decisions')
-def get_meta_decisions():
-    """Get meta-learner decisions."""
-    try:
-        # This would be populated by the meta-learner
-        # For now, return sample data
-        decisions = []
-        return jsonify({'data': decisions})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/safety/events')
-def get_safety_events():
-    """Get safety monitor events."""
-    try:
-        events = telemetry_storage.get_safety_events(limit=100)
-        return jsonify({'data': events})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/query_types/distribution')
-def get_query_type_distribution():
-    """Get distribution of query types."""
-    try:
-        metrics = telemetry_storage.get_recent_metrics(hours=1)
-        
-        distribution = {}
-        for metric in metrics:
-            query_type = metric.get('query_type', 'unknown')
-            distribution[query_type] = distribution.get(query_type, 0) + 1
-            
-        data = [{'type': k, 'count': v} for k, v in distribution.items()]
-        return jsonify({'data': data})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/resources/usage')
-def get_resource_usage():
-    """Get resource usage statistics."""
-    try:
-        metrics = telemetry_storage.get_recent_metrics(minutes=5)
-        
-        if not metrics:
-            return jsonify({'data': {}})
-        
-        recent = metrics[-10:]  # Last 10 queries
-        
-        avg_cpu = sum(m.get('cpu_usage', 0) for m in recent) / len(recent)
-        avg_memory = sum(m.get('memory_usage', 0) for m in recent) / len(recent)
-        cache_hit_rate = sum(m.get('cache_hit_rate', 0) for m in recent) / len(recent)
-        
-        data = {
-            'cpu_usage': avg_cpu,
-            'memory_usage': avg_memory,
-            'cache_hit_rate': cache_hit_rate
-        }
-        
-        return jsonify({'data': data})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/improvement/summary')
-def get_improvement_summary():
-    """Get overall improvement summary."""
-    try:
-        baseline_metrics = telemetry_storage.get_phase_metrics('baseline')
-        current_metrics = telemetry_storage.get_recent_metrics(hours=1)
-        
-        if not baseline_metrics or not current_metrics:
-            return jsonify({'data': None})
-        
-        baseline_summary = metrics_calculator.calculate_summary(baseline_metrics)
-        current_summary = metrics_calculator.calculate_summary(current_metrics)
-        
-        improvement = metrics_calculator.calculate_improvement(
-            baseline_summary,
-            current_summary
-        )
-        
-        return jsonify({'data': improvement})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-def main():
-    """Run the dashboard server."""
-    import argparse
+if __name__ == '__main__':
+    print("\n" + "="*70)
+    print("  Database Query Optimizer - Dashboard")
+    print("="*70)
+    print(f"  Dashboard URL: http://localhost:5000")
+    print(f"  Database: {dashboard_data.db_path}")
+    print("="*70 + "\n")
     
-    parser = argparse.ArgumentParser(description="Query Optimizer Dashboard")
-    parser.add_argument("--port", type=int, default=5000, help="Port to run on")
-    parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    
-    args = parser.parse_args()
-    
-    # Initialize dashboard
-    print("Initializing dashboard...")
-    init_dashboard()
-    
-    print(f"\nDashboard starting on http://{args.host}:{args.port}")
-    print("Press Ctrl+C to stop\n")
-    
-    app.run(
-        host=args.host,
-        port=args.port,
-        debug=args.debug
-    )
-
-
-if __name__ == "__main__":
-    main()
+    app.run(debug=True, host='0.0.0.0', port=5000)

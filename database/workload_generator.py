@@ -100,13 +100,17 @@ class WorkloadGenerator:
         query = template.format(**params)
         
         return query, query_type
-    
+        
     def _generate_parameters(self) -> Dict[str, Any]:
         """Generate random query parameters."""
         param_ranges = self.workload_config['parameter_ranges']
         
         # Random date in the past year
-        days_ago = random.randint(1, param_ranges.get('date_range_days', 365))
+        date_range = param_ranges.get('date_range_days', 365)
+        if isinstance(date_range, list):
+            days_ago = random.randint(date_range[0], date_range[1])
+        else:
+            days_ago = random.randint(1, date_range)
         date = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d')
         
         # Random categories

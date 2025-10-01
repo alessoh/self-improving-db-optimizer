@@ -180,66 +180,51 @@ class DatabaseSetup:
         Generate sample data.
         
         Args:
-            scale_factor: Multiplier for row counts (1.0 = ~10M total rows)
+            scale_factor: Multiplier for data volume (1.0 = ~10M rows)
         """
-        print(f"Generating data (scale factor: {scale_factor})...")
+        print("\nGenerating sample data...")
+        print(f"Scale factor: {scale_factor}x")
         
-        # Calculate row counts
-        n_regions = int(50 * scale_factor)
+        # Calculate row counts based on scale factor
+        n_regions = int(10 * scale_factor)
         n_suppliers = int(1000 * scale_factor)
         n_products = int(10000 * scale_factor)
         n_customers = int(100000 * scale_factor)
         n_orders = int(500000 * scale_factor)
         n_transactions = int(2000000 * scale_factor)
         
-        print(f"Will generate:")
-        print(f"  Regions: {n_regions:,}")
-        print(f"  Suppliers: {n_suppliers:,}")
-        print(f"  Products: {n_products:,}")
-        print(f"  Customers: {n_customers:,}")
-        print(f"  Orders: {n_orders:,}")
-        print(f"  Transactions: {n_transactions:,}")
-        print()
-        
-        # Generate regions
+        # Generate data
         self._generate_regions(n_regions)
-        
-        # Generate suppliers
         self._generate_suppliers(n_suppliers, n_regions)
-        
-        # Generate products
         self._generate_products(n_products, n_suppliers)
-        
-        # Generate customers
         self._generate_customers(n_customers, n_regions)
-        
-        # Generate orders
         self._generate_orders(n_orders, n_customers)
-        
-        # Generate transactions
         self._generate_transactions(n_transactions, n_orders, n_products)
         
-        # Analyze tables for better query planning
-        print("Analyzing tables...")
-        self.cursor.execute("ANALYZE")
-        self.conn.commit()
-        
-        print("Data generation complete!")
+        print("\nData generation complete!")
         
     def _generate_regions(self, n: int):
         """Generate region data."""
         print("Generating regions...")
         
-        countries = ['USA', 'UK', 'Germany', 'France', 'Japan', 'China', 'India', 'Brazil', 'Canada', 'Australia']
-        regions = ['North', 'South', 'East', 'West', 'Central', 'Northeast', 'Northwest', 'Southeast', 'Southwest']
+        regions = [
+            ('North America', 'USA'),
+            ('North America', 'Canada'),
+            ('Europe', 'UK'),
+            ('Europe', 'Germany'),
+            ('Europe', 'France'),
+            ('Asia', 'Japan'),
+            ('Asia', 'China'),
+            ('Asia', 'India'),
+            ('South America', 'Brazil'),
+            ('Oceania', 'Australia'),
+        ]
         
-        data = []
-        for i in range(n):
-            data.append((
-                f"{random.choice(regions)} {random.choice(countries)} Region {i}",
-                random.choice(countries)
-            ))
-            
+        data = regions[:n]
+        if len(data) < n:
+            # Repeat if needed
+            data = (regions * (n // len(regions) + 1))[:n]
+        
         self.cursor.executemany(
             "INSERT INTO regions (region_name, country) VALUES (%s, %s)",
             data
@@ -375,7 +360,7 @@ class DatabaseSetup:
             self.conn.commit()
             
     def create_telemetry_db(self):
-        """Create SQLite telemetry database."""
+        """Create SQLite telemetry database with correct schema."""
         print("Creating telemetry database...")
         
         import sqlite3
@@ -386,7 +371,7 @@ class DatabaseSetup:
         conn = sqlite3.connect(telemetry_path)
         cursor = conn.cursor()
         
-        # Create tables
+        # Create tables with complete schema matching telemetry/storage.py
         cursor.executescript("""
             CREATE TABLE IF NOT EXISTS metrics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -399,7 +384,9 @@ class DatabaseSetup:
                 cache_hit_rate REAL,
                 rows_processed INTEGER,
                 plan_cost REAL,
-                success INTEGER
+                success INTEGER,
+                query_hash TEXT,
+                plan_info TEXT
             );
             
             CREATE TABLE IF NOT EXISTS policy_updates (
@@ -408,7 +395,8 @@ class DatabaseSetup:
                 old_version INTEGER,
                 new_version INTEGER,
                 improvement REAL,
-                validation_score REAL
+                validation_score REAL,
+                changes TEXT
             );
             
             CREATE TABLE IF NOT EXISTS safety_events (
@@ -417,11 +405,25 @@ class DatabaseSetup:
                 severity TEXT NOT NULL,
                 event_type TEXT,
                 description TEXT,
-                action_taken TEXT
+                action_taken TEXT,
+                context TEXT
+            );
+            
+            CREATE TABLE IF NOT EXISTS meta_learning_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                generation INTEGER,
+                best_fitness REAL,
+                avg_fitness REAL,
+                hyperparameters TEXT,
+                improvements TEXT
             );
             
             CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON metrics(timestamp);
             CREATE INDEX IF NOT EXISTS idx_metrics_phase ON metrics(phase);
+            CREATE INDEX IF NOT EXISTS idx_metrics_type ON metrics(query_type);
+            CREATE INDEX IF NOT EXISTS idx_policy_timestamp ON policy_updates(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_safety_timestamp ON safety_events(timestamp);
         """)
         
         conn.commit()
