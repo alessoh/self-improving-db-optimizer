@@ -47,22 +47,22 @@ Open System Properties → Environment Variables
 Add C:\Program Files\PostgreSQL\14\bin to PATH
 Verify installation:
 ## Quick Start
-# 1. Install PostgreSQL 14+ and set password
-# 2. Clone repo and setup
+### 1. Install PostgreSQL 14+ and set password
+### 2. Clone repo and setup
 git clone https://github.com/alessoh/self-improving-db-optimizer
 cd self-improving-db-optimizer
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. Configure
+### 3. Configure
 copy config.yaml.example config.yaml
-# Edit config.yaml - set your PostgreSQL password
+### Edit config.yaml - set your PostgreSQL password
 
-# 4. Initialize database (10-15 minutes)
+### 4. Initialize database (10-15 minutes)
 python setup_database.py
 
-# 5. Run demo
+### 5. Run demo
 python run_demo.py --duration 0.1 --fast-mode  # 5-minute test
 python run_demo.py --duration 14                # Full 2-week simulation
 
@@ -182,7 +182,7 @@ Policy update history
 Safety monitor status
 Meta-learner decisions
 
-Project Structure
+### Project Structure
 self-improving-db-optimizer/
 │
 ├── README.md                 # This file
