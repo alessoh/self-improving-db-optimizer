@@ -6,7 +6,9 @@
 This system demonstrates three levels of autonomous learning:
 
 Level 0 (Operational): AI executes database operations using reinforcement learning
+
 Level 1 (Tactical): System continuously improves operational policies based on performance
+
 Level 2 (Strategic): Meta-learner optimizes the learning process itself
 
 ## The opportunity lies in building a database architecture
