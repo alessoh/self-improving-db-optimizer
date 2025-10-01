@@ -22,7 +22,7 @@ is the policy learning level where the system would analyze execution telemetry 
 is the meta-learning level where the system would evaluate its own learning effectiveness and redesign its neural architecture when learning plateaus. Using techniques like neural architecture search documented in academic research, the system could discover improved model structures. It would optimize reward functions to align with business objectives and auto-tune hyperparameters through population-based training approaches established in machine learning literature. This represents genuine self-improvement rather than parameter adjustment within fixed architectures.
 
 
-## The system runs entirely on a Windows laptop using PostgreSQL and learns to optimize query execution without human intervention.
+## This pilot project system runs entirely on a Windows laptop using PostgreSQL and learns to optimize query execution without human intervention.
 
 System Requirements
 Hardware Requirements
