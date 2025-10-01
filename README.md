@@ -20,10 +20,7 @@ with three levels of autonomous learning.
 is the policy learning level where the system would analyze execution telemetry to continuously improve its operational policies. Rather than waiting for human administrators to identify and fix performance problems, the database would update its decision models based on observed outcomes, validating changes through statistical testing before deployment. This continuous improvement loop would be governed by strict safety mechanisms including execution sandboxes, cost estimation, and automatic rollback capabilities to prevent self-damage.
 ### The third level 
 is the meta-learning level where the system would evaluate its own learning effectiveness and redesign its neural architecture when learning plateaus. Using techniques like neural architecture search documented in academic research, the system could discover improved model structures. It would optimize reward functions to align with business objectives and auto-tune hyperparameters through population-based training approaches established in machine learning literature. This represents genuine self-improvement rather than parameter adjustment within fixed architectures.
-
-
 ## This pilot project system runs entirely on a Windows laptop using PostgreSQL and learns to optimize query execution without human intervention.
-
 System Requirements
 Hardware Requirements
 Windows 10 or 11 (64-bit)
@@ -49,9 +46,7 @@ Add PostgreSQL to your PATH:
 Open System Properties → Environment Variables
 Add C:\Program Files\PostgreSQL\14\bin to PATH
 Verify installation:
-
 ## Quick Start
-```bash
 # 1. Install PostgreSQL 14+ and set password
 # 2. Clone repo and setup
 git clone https://github.com/alessoh/self-improving-db-optimizer
@@ -70,9 +65,6 @@ python setup_database.py
 # 5. Run demo
 python run_demo.py --duration 0.1 --fast-mode  # 5-minute test
 python run_demo.py --duration 14                # Full 2-week simulation
-
-
-
 
 Level 1 (Tactical)**: System continuously improves operational policies based on performance
 - **Level 2 (Strategic)**: Meta-learner optimizes the learning process itself
@@ -109,23 +101,22 @@ The system runs entirely on a Windows laptop using PostgreSQL and learns to opti
    - Open System Properties → Environment Variables
    - Add `C:\Program Files\PostgreSQL\14\bin` to PATH
 5. Verify installation:
-```bash
    psql --version
 Step 2: Install Python Dependencies
 
 Clone this repository:
 
-bash   git clone https://github.com/yourusername/self-improving-db-optimizer.git
+git clone https://github.com/yourusername/self-improving-db-optimizer.git
    cd self-improving-db-optimizer
 
 Create a virtual environment:
 
-bash   python -m venv venv
+ python -m venv venv
    venv\Scripts\activate
 
 Install required packages:
 
-bash   pip install --upgrade pip
+pip install --upgrade pip
    pip install -r requirements.txt
 If you encounter issues with PyTorch on Windows:
 bash   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
@@ -148,13 +139,13 @@ Run the database setup script:
 bashpython setup_database.py
 This will:
 
-Create the database query_optimizer_demo
+### Create the database query_optimizer_demo
 Generate sample tables (customers, orders, products, suppliers, regions, transactions)
 Load approximately 10 million rows of synthetic data
 Create necessary indexes
 Initialize the telemetry database
 
-Note: Initial setup takes 10-15 minutes depending on your system.
+### Note: Initial setup takes 10-15 minutes depending on your system.
 Verify the setup:
 bashpython setup_database.py --verify
 Step 5: Run the Demonstration
@@ -164,22 +155,22 @@ For a quick test (2-hour simulation):
 bashpython run_demo.py --duration 0.1 --fast-mode
 The system will:
 
-Establish baseline performance (no learning)
+### Establish baseline performance (no learning)
 Activate Level 0 operational learning
 Enable Level 1 policy optimization
 Engage Level 2 meta-learning
 Display results and performance improvements
 
-Step 6: Monitor the Dashboard
+## Step 6: Monitor the Dashboard
 While the system is running, access the web dashboard:
 
 Open another terminal and activate the virtual environment:
 
-bash   venv\Scripts\activate
+venv\Scripts\activate
 
 Start the dashboard:
 
-bash   python dashboard.py
+python dashboard.py
 
 Open your browser to: http://localhost:5000
 
