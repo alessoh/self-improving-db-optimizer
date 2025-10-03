@@ -14575,3 +14575,398 @@ Traceback (most recent call last):
     self.level0_config = config['level0']
                          ~~~~~~^^^^^^^^^^
 KeyError: 'level0'
+2025-10-03 15:56:21 - root - INFO - ============================================================
+2025-10-03 15:56:21 - root - INFO - Logging system initialized
+2025-10-03 15:56:21 - root - INFO - Log level: INFO
+2025-10-03 15:56:21 - root - INFO - Log directory: data\logs
+2025-10-03 15:56:21 - root - INFO - ============================================================
+2025-10-03 15:56:21 - root - INFO - ============================================================
+2025-10-03 15:56:21 - root - INFO - Logging system initialized
+2025-10-03 15:56:21 - root - INFO - Log level: INFO
+2025-10-03 15:56:21 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:56:21 - root - INFO - ============================================================
+2025-10-03 15:56:21 - main - INFO - System Orchestrator initialized
+2025-10-03 15:56:21 - main - INFO - Initializing system components...
+2025-10-03 15:56:21 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 15:56:21 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:56:21 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 15:56:21 - main - INFO - Initializing database manager...
+2025-10-03 15:56:21 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 15:56:21 - main - INFO - Database connection verified successfully
+2025-10-03 15:56:21 - main - INFO - Initializing telemetry storage...
+2025-10-03 15:56:21 - main - INFO - Initializing telemetry collector...
+2025-10-03 15:56:21 - main - INFO - Initializing workload generator...
+2025-10-03 15:56:21 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 15:56:31 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 15:56:32 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 15:56:32 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 15:56:32 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 15:56:32 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 15:56:32 - main - INFO - Initializing safety monitor...
+2025-10-03 15:56:32 - main - ERROR - Failed to initialize components: SafetyMonitor.__init__() takes 3 positional arguments but 4 were given
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 166, in initialize_components
+    self.safety_monitor = SafetyMonitor(
+                          ^^^^^^^^^^^^^^
+TypeError: SafetyMonitor.__init__() takes 3 positional arguments but 4 were given
+2025-10-03 15:56:32 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 118, in run_demo
+    orchestrator.initialize_components()
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 166, in initialize_components
+    self.safety_monitor = SafetyMonitor(
+                          ^^^^^^^^^^^^^^
+TypeError: SafetyMonitor.__init__() takes 3 positional arguments but 4 were given
+2025-10-03 15:58:28 - root - INFO - ============================================================
+2025-10-03 15:58:28 - root - INFO - Logging system initialized
+2025-10-03 15:58:28 - root - INFO - Log level: INFO
+2025-10-03 15:58:28 - root - INFO - Log directory: data\logs
+2025-10-03 15:58:28 - root - INFO - ============================================================
+2025-10-03 15:58:28 - root - INFO - ============================================================
+2025-10-03 15:58:28 - root - INFO - Logging system initialized
+2025-10-03 15:58:28 - root - INFO - Log level: INFO
+2025-10-03 15:58:28 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:58:28 - root - INFO - ============================================================
+2025-10-03 15:58:28 - main - INFO - System Orchestrator initialized
+2025-10-03 15:58:28 - main - INFO - Initializing system components...
+2025-10-03 15:58:28 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 15:58:28 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:58:28 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 15:58:28 - main - INFO - Initializing database manager...
+2025-10-03 15:58:28 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 15:58:28 - main - INFO - Database connection verified successfully
+2025-10-03 15:58:28 - main - INFO - Initializing telemetry storage...
+2025-10-03 15:58:28 - main - INFO - Initializing telemetry collector...
+2025-10-03 15:58:28 - main - INFO - Initializing workload generator...
+2025-10-03 15:58:28 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 15:58:29 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 15:58:29 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 15:58:29 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 15:58:29 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 15:58:29 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 15:58:29 - main - INFO - Initializing safety monitor...
+2025-10-03 15:58:29 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 15:58:29 - main - INFO - Initializing metrics calculator...
+2025-10-03 15:58:29 - main - ERROR - Failed to initialize components: MetricsCalculator.__init__() missing 1 required positional argument: 'config'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 173, in initialize_components
+    self.metrics_calculator = MetricsCalculator()
+                              ^^^^^^^^^^^^^^^^^^^
+TypeError: MetricsCalculator.__init__() missing 1 required positional argument: 'config'
+2025-10-03 15:58:29 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 118, in run_demo
+    orchestrator.initialize_components()
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 173, in initialize_components
+    self.metrics_calculator = MetricsCalculator()
+                              ^^^^^^^^^^^^^^^^^^^
+TypeError: MetricsCalculator.__init__() missing 1 required positional argument: 'config'
+2025-10-03 16:00:11 - root - INFO - ============================================================
+2025-10-03 16:00:11 - root - INFO - Logging system initialized
+2025-10-03 16:00:11 - root - INFO - Log level: INFO
+2025-10-03 16:00:11 - root - INFO - Log directory: data\logs
+2025-10-03 16:00:11 - root - INFO - ============================================================
+2025-10-03 16:00:11 - root - INFO - ============================================================
+2025-10-03 16:00:11 - root - INFO - Logging system initialized
+2025-10-03 16:00:11 - root - INFO - Log level: INFO
+2025-10-03 16:00:11 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:00:11 - root - INFO - ============================================================
+2025-10-03 16:00:11 - main - INFO - System Orchestrator initialized
+2025-10-03 16:00:11 - main - INFO - Initializing system components...
+2025-10-03 16:00:11 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:00:11 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:00:11 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:00:11 - main - INFO - Initializing database manager...
+2025-10-03 16:00:11 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:00:11 - main - INFO - Database connection verified successfully
+2025-10-03 16:00:11 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:00:11 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:00:11 - main - INFO - Initializing workload generator...
+2025-10-03 16:00:11 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:00:12 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:00:12 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:00:12 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:00:12 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:00:12 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:00:12 - main - INFO - Initializing safety monitor...
+2025-10-03 16:00:12 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:00:12 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:00:12 - main - INFO - All components initialized successfully
+2025-10-03 16:00:14 - main - INFO - ======================================================================
+2025-10-03 16:00:14 - main - INFO - Starting system - Duration: 0.01 days
+2025-10-03 16:00:14 - main - INFO - Fast mode: True
+2025-10-03 16:00:14 - main - INFO - ======================================================================
+2025-10-03 16:00:14 - main - ERROR - Query execution failed: 'QueryOptimizer' object has no attribute 'execute_with_optimization'
+2025-10-03 16:00:14 - main - ERROR - Error in iteration 0: 'SafetyMonitor' object has no attribute 'record_error'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 281, in _execute_iteration
+    result = self.query_optimizer.execute_with_optimization(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'QueryOptimizer' object has no attribute 'execute_with_optimization'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 246, in start
+    self._execute_iteration(iteration)
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 293, in _execute_iteration
+    self.safety_monitor.record_error(e)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SafetyMonitor' object has no attribute 'record_error'
+2025-10-03 16:00:14 - main - ERROR - Fatal error in system execution: 'SafetyMonitor' object has no attribute 'record_error'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 281, in _execute_iteration
+    result = self.query_optimizer.execute_with_optimization(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'QueryOptimizer' object has no attribute 'execute_with_optimization'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 246, in start
+    self._execute_iteration(iteration)
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 293, in _execute_iteration
+    self.safety_monitor.record_error(e)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SafetyMonitor' object has no attribute 'record_error'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 258, in start
+    self.safety_monitor.record_error(e)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SafetyMonitor' object has no attribute 'record_error'
+2025-10-03 16:00:14 - main - INFO - Initiating system shutdown...
+2025-10-03 16:00:14 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:00:14 - main - ERROR - Error closing telemetry storage: 'TelemetryStorage' object has no attribute 'close'
+2025-10-03 16:00:14 - main - INFO - System shutdown complete
+2025-10-03 16:00:14 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 281, in _execute_iteration
+    result = self.query_optimizer.execute_with_optimization(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'QueryOptimizer' object has no attribute 'execute_with_optimization'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 246, in start
+    self._execute_iteration(iteration)
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 293, in _execute_iteration
+    self.safety_monitor.record_error(e)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SafetyMonitor' object has no attribute 'record_error'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 127, in run_demo
+    orchestrator.start(
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 258, in start
+    self.safety_monitor.record_error(e)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SafetyMonitor' object has no attribute 'record_error'
+2025-10-03 16:02:33 - root - INFO - ============================================================
+2025-10-03 16:02:33 - root - INFO - Logging system initialized
+2025-10-03 16:02:33 - root - INFO - Log level: INFO
+2025-10-03 16:02:33 - root - INFO - Log directory: data\logs
+2025-10-03 16:02:33 - root - INFO - ============================================================
+2025-10-03 16:02:33 - root - INFO - ============================================================
+2025-10-03 16:02:33 - root - INFO - Logging system initialized
+2025-10-03 16:02:33 - root - INFO - Log level: INFO
+2025-10-03 16:02:33 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:02:33 - root - INFO - ============================================================
+2025-10-03 16:02:33 - main - INFO - System Orchestrator initialized
+2025-10-03 16:02:33 - main - INFO - Initializing system components...
+2025-10-03 16:02:33 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:02:33 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:02:33 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:02:33 - main - INFO - Initializing database manager...
+2025-10-03 16:02:33 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:02:33 - main - INFO - Database connection verified successfully
+2025-10-03 16:02:33 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:02:33 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:02:33 - main - INFO - Initializing workload generator...
+2025-10-03 16:02:33 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:02:34 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:02:34 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:02:34 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:02:34 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:02:34 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:02:34 - main - INFO - Initializing safety monitor...
+2025-10-03 16:02:34 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:02:34 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:02:34 - main - INFO - All components initialized successfully
+2025-10-03 16:02:36 - main - INFO - ======================================================================
+2025-10-03 16:02:36 - main - INFO - Starting system - Duration: 0.01 days
+2025-10-03 16:02:36 - main - INFO - Fast mode: True
+2025-10-03 16:02:36 - main - INFO - ======================================================================
+2025-10-03 16:02:36 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:36 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:02:36 - core.policy_learner - INFO - Insufficient samples (0) for update
+2025-10-03 16:02:36 - main - ERROR - Meta-learning failed: 'MetaLearner' object has no attribute 'optimize_hyperparameters'
+2025-10-03 16:02:36 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:37 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:37 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:37 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:38 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:39 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:39 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:39 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:39 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:39 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:40 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:41 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:41 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:41 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:42 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:43 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:44 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:44 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:44 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:44 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:44 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:44 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:45 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:45 - main - ERROR - Query execution failed: 'TelemetryCollector' object has no attribute 'collect'
+2025-10-03 16:02:45 - main - INFO - Initiating system shutdown...
+2025-10-03 16:02:45 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:02:45 - main - INFO - System shutdown complete
+2025-10-03 16:02:45 - main - INFO - ======================================================================
+2025-10-03 16:02:45 - main - INFO - System execution completed
+2025-10-03 16:02:45 - main - INFO - Total iterations: 51
+2025-10-03 16:02:45 - main - INFO - Total queries: 51
+2025-10-03 16:02:45 - main - INFO - ======================================================================
+2025-10-03 16:05:14 - root - INFO - ============================================================
+2025-10-03 16:05:14 - root - INFO - Logging system initialized
+2025-10-03 16:05:14 - root - INFO - Log level: INFO
+2025-10-03 16:05:14 - root - INFO - Log directory: data\logs
+2025-10-03 16:05:14 - root - INFO - ============================================================
+2025-10-03 16:05:14 - root - INFO - ============================================================
+2025-10-03 16:05:14 - root - INFO - Logging system initialized
+2025-10-03 16:05:14 - root - INFO - Log level: INFO
+2025-10-03 16:05:14 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:05:14 - root - INFO - ============================================================
+2025-10-03 16:05:14 - main - INFO - System Orchestrator initialized
+2025-10-03 16:05:14 - main - INFO - Initializing system components...
+2025-10-03 16:05:14 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:05:15 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:05:15 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:05:15 - main - INFO - Initializing database manager...
+2025-10-03 16:05:15 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:05:15 - main - INFO - Database connection verified successfully
+2025-10-03 16:05:15 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:05:15 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:05:15 - main - INFO - Initializing workload generator...
+2025-10-03 16:05:15 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:05:16 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:05:16 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:05:16 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:05:16 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:05:16 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:05:16 - main - INFO - Initializing safety monitor...
+2025-10-03 16:05:16 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:05:16 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:05:16 - main - INFO - All components initialized successfully
+2025-10-03 16:05:18 - main - INFO - ======================================================================
+2025-10-03 16:05:18 - main - INFO - Starting system - Duration: 0.01 days
+2025-10-03 16:05:18 - main - INFO - Fast mode: True
+2025-10-03 16:05:18 - main - INFO - ======================================================================
+2025-10-03 16:05:18 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:05:18 - core.policy_learner - INFO - Insufficient samples (0) for update
+2025-10-03 16:05:18 - core.meta_learner - INFO - Running meta-learning generation 0
+2025-10-03 16:05:18 - core.meta_learner - INFO - New best chromosome found! Fitness: 0.5000
+2025-10-03 16:05:18 - core.meta_learner - INFO - Applied best hyperparameters: {'learning_rate': 0.0013407840186648841, 'batch_size': 96, 'gamma': 0.9865212601573662, 'epsilon_decay': 0.9948252192265781}
+2025-10-03 16:05:26 - main - INFO - Initiating system shutdown...
+2025-10-03 16:05:26 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:05:26 - main - INFO - System shutdown complete
+2025-10-03 16:05:26 - main - INFO - ======================================================================
+2025-10-03 16:05:26 - main - INFO - System execution completed
+2025-10-03 16:05:26 - main - INFO - Total iterations: 61
+2025-10-03 16:05:26 - main - INFO - Total queries: 61
+2025-10-03 16:05:26 - main - INFO - ======================================================================
+2025-10-03 16:12:51 - root - INFO - ============================================================
+2025-10-03 16:12:51 - root - INFO - Logging system initialized
+2025-10-03 16:12:51 - root - INFO - Log level: INFO
+2025-10-03 16:12:51 - root - INFO - Log directory: data\logs
+2025-10-03 16:12:51 - root - INFO - ============================================================
+2025-10-03 16:12:51 - root - INFO - ============================================================
+2025-10-03 16:12:51 - root - INFO - Logging system initialized
+2025-10-03 16:12:51 - root - INFO - Log level: INFO
+2025-10-03 16:12:51 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:12:51 - root - INFO - ============================================================
+2025-10-03 16:12:51 - main - INFO - System Orchestrator initialized
+2025-10-03 16:12:51 - main - INFO - Initializing system components...
+2025-10-03 16:12:51 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:12:51 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:12:51 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:12:51 - main - INFO - Initializing database manager...
+2025-10-03 16:12:51 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:12:51 - main - INFO - Database connection verified successfully
+2025-10-03 16:12:51 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:12:51 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:12:51 - main - INFO - Initializing workload generator...
+2025-10-03 16:12:51 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:12:52 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:12:52 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:12:52 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:12:52 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:12:52 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:12:52 - main - INFO - Initializing safety monitor...
+2025-10-03 16:12:52 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:12:52 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:12:52 - main - INFO - All components initialized successfully
+2025-10-03 16:12:54 - main - INFO - ======================================================================
+2025-10-03 16:12:54 - main - INFO - Starting system - Duration: 0.1 days
+2025-10-03 16:12:54 - main - INFO - Fast mode: True
+2025-10-03 16:12:54 - main - INFO - ======================================================================
+2025-10-03 16:12:54 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:12:54 - core.policy_learner - INFO - Insufficient samples (0) for update
+2025-10-03 16:12:54 - core.meta_learner - INFO - Running meta-learning generation 0
+2025-10-03 16:12:54 - core.meta_learner - INFO - New best chromosome found! Fitness: 0.8784
+2025-10-03 16:12:54 - core.meta_learner - INFO - Applied best hyperparameters: {'learning_rate': 0.008405413789887054, 'batch_size': 121, 'gamma': 0.962938246522679, 'epsilon_decay': 0.9917780017812717}
+2025-10-03 16:13:10 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:13:10 - core.policy_learner - INFO - Insufficient samples (98) for update
+2025-10-03 16:13:27 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:13:27 - main - ERROR - Policy update failed: 'str' object has no attribute 'get'
+2025-10-03 16:13:44 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:13:44 - main - ERROR - Policy update failed: 'str' object has no attribute 'get'
+2025-10-03 16:13:59 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:13:59 - main - ERROR - Policy update failed: 'str' object has no attribute 'get'
+2025-10-03 16:14:13 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:14:13 - main - ERROR - Policy update failed: 'str' object has no attribute 'get'
+2025-10-03 16:14:21 - main - INFO - Initiating system shutdown...
+2025-10-03 16:14:21 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:14:21 - main - INFO - System shutdown complete
+2025-10-03 16:14:21 - main - INFO - ======================================================================
+2025-10-03 16:14:21 - main - INFO - System execution completed
+2025-10-03 16:14:21 - main - INFO - Total iterations: 548
+2025-10-03 16:14:21 - main - INFO - Total queries: 548
+2025-10-03 16:14:21 - main - INFO - ======================================================================

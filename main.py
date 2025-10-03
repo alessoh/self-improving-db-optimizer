@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-"""
-Main System Orchestrator for Self-Improving Database Query Optimizer
-Windows-Compatible Version - FIXED WorkloadGenerator initialization
-"""
-
 import os
 import sys
 import time
@@ -15,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import logging
 
-# FIXED: Add project root to path with absolute path
+# Add project root to path with absolute path resolution
 project_root = Path(__file__).parent.resolve()
 sys.path.insert(0, str(project_root))
 
@@ -41,7 +35,7 @@ class SystemOrchestrator:
         Args:
             config_path: Path to configuration file
         """
-        # FIXED: Use Path object for config path
+        # Use Path object for config path
         self.config_path = Path(config_path).resolve()
         self.config = self._load_config(str(self.config_path))
         self.running = False
@@ -51,7 +45,7 @@ class SystemOrchestrator:
         setup_logger(self.config)
         self.logger = get_logger(__name__)
         
-        # Initialize components
+        # Initialize components (will be populated in initialize_components)
         self.db_manager = None
         self.workload_generator = None
         self.query_optimizer = None
@@ -75,19 +69,21 @@ class SystemOrchestrator:
         self.logger.info("System Orchestrator initialized")
         
     def _load_config(self, config_path: str) -> Dict[str, Any]:
-        """Load configuration from YAML file."""
+        """Load configuration from YAML file with proper encoding."""
         try:
-            # FIXED: Explicit UTF-8 encoding for Windows
+            # Explicit UTF-8 encoding for Windows compatibility
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
             
-            # FIXED: Convert all path strings to Path objects
+            # Convert all path strings to resolved absolute paths
             if 'paths' in config:
                 for key, value in config['paths'].items():
                     if isinstance(value, str):
+                        # Resolve relative paths to absolute paths
                         config['paths'][key] = str(Path(value).resolve())
             
             return config
+            
         except FileNotFoundError:
             print(f"Error: Configuration file not found: {config_path}")
             print("Please copy config.yaml.example to config.yaml and configure it.")
@@ -128,35 +124,38 @@ class SystemOrchestrator:
             )
             
             # Initialize workload generator
-            # FIXED: Pass the full config object, not just config['workload']
+            # FIXED: Pass full config - WorkloadGenerator extracts config['workload'] internally
             self.logger.info("Initializing workload generator...")
             self.workload_generator = WorkloadGenerator(
-                self.config,  # FIXED: Pass full config, WorkloadGenerator will extract 'workload'
+                self.config,
                 self.db_manager
             )
             
             # Initialize query optimizer (Level 0)
+            # FIXED: Pass full config - QueryOptimizer extracts config['level0'] internally
             self.logger.info("Initializing query optimizer (Level 0)...")
             self.query_optimizer = QueryOptimizer(
-                self.config['level0'],
+                self.config,
                 self.db_manager,
                 self.telemetry_collector
             )
             
             # Initialize policy learner (Level 1)
             if self.config['level1']['enabled']:
+                # FIXED: Pass full config - PolicyLearner extracts config['level1'] internally
                 self.logger.info("Initializing policy learner (Level 1)...")
                 self.policy_learner = PolicyLearner(
-                    self.config['level1'],
+                    self.config,
                     self.query_optimizer,
                     self.telemetry_storage
                 )
             
             # Initialize meta-learner (Level 2)
             if self.config['level2']['enabled']:
+                # FIXED: Pass full config - MetaLearner extracts config['level2'] internally
                 self.logger.info("Initializing meta-learner (Level 2)...")
                 self.meta_learner = MetaLearner(
-                    self.config['level2'],
+                    self.config,
                     self.policy_learner,
                     self.telemetry_storage
                 )
@@ -164,17 +163,17 @@ class SystemOrchestrator:
             # Initialize safety monitor
             if self.config['safety']['enabled']:
                 self.logger.info("Initializing safety monitor...")
+                # FIXED: SafetyMonitor only needs config and telemetry_storage (not db_manager or collector)
                 self.safety_monitor = SafetyMonitor(
-                    self.config['safety'],
-                    self.db_manager,
-                    self.telemetry_collector
+                    self.config,
+                    self.telemetry_storage
                 )
             
             # Initialize metrics calculator
             self.logger.info("Initializing metrics calculator...")
-            self.metrics_calculator = MetricsCalculator()
+            self.metrics_calculator = MetricsCalculator(self.config)
             
-            # FIXED: Register signal handlers with proper Windows handling
+            # Register signal handlers with proper Windows handling
             if sys.platform == 'win32':
                 # Windows doesn't support SIGTERM the same way
                 signal.signal(signal.SIGINT, self._signal_handler)
@@ -210,8 +209,7 @@ class SystemOrchestrator:
             return False
     
     def _create_directories(self):
-        """Create necessary directories."""
-        # FIXED: Use Path objects for all directory operations
+        """Create necessary directories using Path objects."""
         paths = self.config['paths']
         for key, path_str in paths.items():
             if key.endswith('_dir'):
@@ -257,8 +255,13 @@ class SystemOrchestrator:
                     break
                 except Exception as e:
                     self.logger.error(f"Error in iteration {iteration}: {e}", exc_info=True)
-                    if self.safety_monitor:
-                        self.safety_monitor.record_error(e)
+                    # FIXED: Record through telemetry_collector
+                    if self.telemetry_collector:
+                        self.telemetry_collector.record_safety_event({
+                            'severity': 'error',
+                            'event_type': 'iteration_failure',
+                            'description': str(e)
+                        })
             
             # Shutdown
             self.shutdown()
@@ -278,22 +281,40 @@ class SystemOrchestrator:
         """Execute a single iteration of the system."""
         # Query execution with optimizer
         if self.workload_generator and self.query_optimizer:
-            query, params = self.workload_generator.generate_query()
+            query, query_type = self.workload_generator.generate_query()
             
             try:
-                result = self.query_optimizer.execute_with_optimization(
-                    query, params, phase=self.current_phase
+                # FIXED: Correct method name is execute_query, needs state parameter
+                state = {
+                    'timestamp': time.time(),
+                    'phase': self.current_phase,
+                    'iteration': iteration
+                }
+                result = self.query_optimizer.execute_query(
+                    query, query_type, state
                 )
                 self.stats['queries_executed'] += 1
                 
-                # Collect telemetry
+                # FIXED: Collect telemetry with correct method and parameters
                 if self.telemetry_collector:
-                    self.telemetry_collector.collect(result)
+                    self.telemetry_collector.record_execution(
+                        query=query,
+                        query_type=query_type,
+                        execution_time=result.get('execution_time', 0),
+                        resources=result.get('resources', {}),
+                        plan_info=result.get('plan_info', {}),
+                        success=result.get('success', True)
+                    )
                     
             except Exception as e:
                 self.logger.error(f"Query execution failed: {e}")
-                if self.safety_monitor:
-                    self.safety_monitor.record_error(e)
+                # FIXED: Record through telemetry_collector, not safety_monitor
+                if self.telemetry_collector:
+                    self.telemetry_collector.record_safety_event({
+                        'severity': 'error',
+                        'event_type': 'query_execution_failure',
+                        'description': str(e)
+                    })
         
         # Policy updates (Level 1)
         if iteration % 100 == 0 and self.policy_learner:
@@ -306,7 +327,8 @@ class SystemOrchestrator:
         # Meta-learning (Level 2)
         if iteration % 1000 == 0 and self.meta_learner:
             try:
-                self.meta_learner.optimize_hyperparameters()
+                # FIXED: Correct method name is optimize()
+                self.meta_learner.optimize()
                 self.stats['meta_learner_runs'] += 1
             except Exception as e:
                 self.logger.error(f"Meta-learning failed: {e}")
@@ -322,11 +344,13 @@ class SystemOrchestrator:
         
         # Close database connections
         if self.db_manager:
-            self.db_manager.disconnect()
+            try:
+                self.db_manager.disconnect()
+            except Exception as e:
+                self.logger.error(f"Error disconnecting database: {e}")
         
-        # Close telemetry storage
-        if self.telemetry_storage:
-            self.telemetry_storage.close()
+        # FIXED: TelemetryStorage doesn't have a close() method
+        # SQLite connections are managed internally and closed automatically
         
         self.logger.info("System shutdown complete")
 
@@ -339,26 +363,36 @@ def main():
     parser.add_argument(
         '--config',
         default='config.yaml',
-        help='Path to configuration file'
+        help='Path to configuration file (default: config.yaml)'
     )
     parser.add_argument(
         '--duration',
         type=float,
         default=14.0,
-        help='Simulation duration in days'
+        help='Simulation duration in days (default: 14.0)'
     )
     parser.add_argument(
         '--fast-mode',
         action='store_true',
-        help='Run in fast mode (100x speed)'
+        help='Run in fast mode (100x speed) for testing'
     )
     
     args = parser.parse_args()
     
-    # Initialize and run system
-    orchestrator = SystemOrchestrator(args.config)
-    orchestrator.initialize_components()
-    orchestrator.start(duration_days=args.duration, fast_mode=args.fast_mode)
+    try:
+        # Initialize and run system
+        orchestrator = SystemOrchestrator(args.config)
+        orchestrator.initialize_components()
+        orchestrator.start(duration_days=args.duration, fast_mode=args.fast_mode)
+        
+    except KeyboardInterrupt:
+        print("\n\nShutdown requested by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n\nFatal error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == '__main__':
