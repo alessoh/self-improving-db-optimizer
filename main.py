@@ -68,7 +68,7 @@ class SystemOrchestrator:
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from YAML file."""
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
             return config
         except FileNotFoundError:
@@ -78,39 +78,48 @@ class SystemOrchestrator:
         except yaml.YAMLError as e:
             print(f"Error parsing configuration file: {e}")
             sys.exit(1)
+        except Exception as e:
+            print(f"Unexpected error loading config: {e}")
+            sys.exit(1)
             
     def initialize_components(self):
         """Initialize all system components."""
-        self.logger.info("Initializing system components...")
-        
         try:
-            # Create data directories
+            self.logger.info("Initializing system components...")
+            
+            # Create necessary directories
             self._create_directories()
             
             # Initialize database manager
-            self.logger.info("Connecting to database...")
-            self.db_manager = DatabaseManager(self.config)
-            self.db_manager.connect()
+            self.logger.info("Initializing database manager...")
+            self.db_manager = DatabaseManager(self.config['database'])
             
-            # Initialize telemetry
-            self.logger.info("Setting up telemetry...")
+            # Verify database connection
+            if not self._verify_database_connection():
+                raise Exception("Failed to connect to database")
+            
+            # Initialize telemetry storage
+            self.logger.info("Initializing telemetry storage...")
             self.telemetry_storage = TelemetryStorage(self.config)
+            
+            # Initialize telemetry collector
+            self.logger.info("Initializing telemetry collector...")
             self.telemetry_collector = TelemetryCollector(
-                self.config, 
+                self.config,
                 self.telemetry_storage
             )
             
             # Initialize workload generator
             self.logger.info("Initializing workload generator...")
             self.workload_generator = WorkloadGenerator(
-                self.config,
+                self.config['workload'],
                 self.db_manager
             )
             
             # Initialize query optimizer (Level 0)
             self.logger.info("Initializing query optimizer (Level 0)...")
             self.query_optimizer = QueryOptimizer(
-                self.config,
+                self.config['level0'],
                 self.db_manager,
                 self.telemetry_collector
             )
@@ -119,7 +128,7 @@ class SystemOrchestrator:
             if self.config['level1']['enabled']:
                 self.logger.info("Initializing policy learner (Level 1)...")
                 self.policy_learner = PolicyLearner(
-                    self.config,
+                    self.config['level1'],
                     self.query_optimizer,
                     self.telemetry_storage
                 )
@@ -128,355 +137,211 @@ class SystemOrchestrator:
             if self.config['level2']['enabled']:
                 self.logger.info("Initializing meta-learner (Level 2)...")
                 self.meta_learner = MetaLearner(
-                    self.config,
+                    self.config['level2'],
                     self.policy_learner,
                     self.telemetry_storage
                 )
             
             # Initialize safety monitor
-            self.logger.info("Initializing safety monitor...")
-            self.safety_monitor = SafetyMonitor(
-                self.config,
-                self.telemetry_storage
-            )
+            if self.config['safety']['enabled']:
+                self.logger.info("Initializing safety monitor...")
+                self.safety_monitor = SafetyMonitor(
+                    self.config['safety'],
+                    self.db_manager,
+                    self.telemetry_collector
+                )
             
             # Initialize metrics calculator
-            self.metrics_calculator = MetricsCalculator(self.config)
+            self.logger.info("Initializing metrics calculator...")
+            self.metrics_calculator = MetricsCalculator()
+            
+            # Register signal handlers
+            signal.signal(signal.SIGINT, self._signal_handler)
+            signal.signal(signal.SIGTERM, self._signal_handler)
             
             self.logger.info("All components initialized successfully")
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize components: {e}")
+            self.logger.error(f"Failed to initialize components: {e}", exc_info=True)
             raise
+    
+    def _verify_database_connection(self) -> bool:
+        """Verify database connection is working."""
+        try:
+            conn = self.db_manager.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            cursor.close()
+            self.db_manager.return_connection(conn)
             
+            if result and result[0] == 1:
+                self.logger.info("Database connection verified successfully")
+                return True
+            else:
+                self.logger.error("Database connection test failed")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Database connection verification failed: {e}")
+            return False
+    
     def _create_directories(self):
-        """Create necessary directories if they don't exist."""
+        """Create necessary directories."""
         paths = self.config['paths']
         for key, path in paths.items():
             if key.endswith('_dir'):
                 Path(path).mkdir(parents=True, exist_ok=True)
-                
+                self.logger.info(f"Created/verified directory: {path}")
+    
     def start(self, duration_days: float = 14.0, fast_mode: bool = False):
         """
         Start the system and run for specified duration.
         
         Args:
-            duration_days: Number of days to run (can be fractional)
-            fast_mode: If True, accelerate time for testing
+            duration_days: Duration in days (can be fractional)
+            fast_mode: Accelerate time for testing
         """
-        self.running = True
-        self.start_time = datetime.now()
-        
-        # Setup signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
-        
-        self.logger.info(f"Starting system for {duration_days} days")
-        if fast_mode:
-            self.logger.info("Fast mode enabled - time accelerated")
-            
         try:
-            # Phase 1: Baseline (Days 1-3)
-            self._run_phase(
-                "baseline",
-                duration=3.0 * (1.0 if not fast_mode else 0.01),
-                learning_enabled=False
-            )
+            self.running = True
+            self.start_time = datetime.now()
             
-            # Phase 2: Level 0 Learning (Days 4-7)
-            self._run_phase(
-                "level0_learning",
-                duration=4.0 * (1.0 if not fast_mode else 0.01),
-                learning_enabled=True,
-                level0=True,
-                level1=False,
-                level2=False
-            )
+            self.logger.info("="*70)
+            self.logger.info(f"Starting system - Duration: {duration_days} days")
+            self.logger.info(f"Fast mode: {fast_mode}")
+            self.logger.info("="*70)
             
-            # Phase 3: Level 1 Learning (Days 8-11)
-            if self.policy_learner:
-                self._run_phase(
-                    "level1_learning",
-                    duration=4.0 * (1.0 if not fast_mode else 0.01),
-                    learning_enabled=True,
-                    level0=True,
-                    level1=True,
-                    level2=False
-                )
+            # Calculate time scaling
+            time_scale = 100 if fast_mode else 1
+            duration_seconds = duration_days * 24 * 3600 / time_scale
+            end_time = time.time() + duration_seconds
             
-            # Phase 4: Level 2 Meta-Learning (Days 12-14)
-            if self.meta_learner:
-                self._run_phase(
-                    "level2_learning",
-                    duration=3.0 * (1.0 if not fast_mode else 0.01),
-                    learning_enabled=True,
-                    level0=True,
-                    level1=True,
-                    level2=True
-                )
-                
-            self.logger.info("System run completed successfully")
-            self._generate_final_report()
+            # Main execution loop
+            iteration = 0
+            while self.running and time.time() < end_time:
+                try:
+                    if not self.paused:
+                        self._execute_iteration(iteration)
+                        iteration += 1
+                    
+                    # Sleep briefly to prevent CPU spinning
+                    time.sleep(0.1 if fast_mode else 1.0)
+                    
+                except KeyboardInterrupt:
+                    self.logger.info("Received interrupt signal, shutting down...")
+                    break
+                except Exception as e:
+                    self.logger.error(f"Error in iteration {iteration}: {e}", exc_info=True)
+                    if self.safety_monitor:
+                        self.safety_monitor.record_error(e)
             
-        except KeyboardInterrupt:
-            self.logger.info("Received interrupt signal, shutting down...")
-        except Exception as e:
-            self.logger.error(f"Error during system run: {e}", exc_info=True)
-            raise
-        finally:
+            # Shutdown
             self.shutdown()
             
-    def _run_phase(
-        self, 
-        phase_name: str, 
-        duration: float,
-        learning_enabled: bool,
-        level0: bool = False,
-        level1: bool = False,
-        level2: bool = False
-    ):
-        """
-        Run a specific phase of the demonstration.
-        
-        Args:
-            phase_name: Name of the phase
-            duration: Duration in days
-            learning_enabled: Whether learning is enabled
-            level0: Enable Level 0 learning
-            level1: Enable Level 1 learning
-            level2: Enable Level 2 learning
-        """
-        self.current_phase = phase_name
-        phase_start = time.time()
-        duration_seconds = duration * 86400  # Convert days to seconds
-        
-        self.logger.info(f"Starting phase: {phase_name} (duration: {duration} days)")
-        self.logger.info(f"Learning - L0: {level0}, L1: {level1}, L2: {level2}")
-        
-        # Configure learning levels
-        if self.query_optimizer:
-            self.query_optimizer.set_learning_enabled(level0)
-        if self.policy_learner:
-            self.policy_learner.set_enabled(level1)
-        if self.meta_learner:
-            self.meta_learner.set_enabled(level2)
+            self.logger.info("="*70)
+            self.logger.info("System execution completed")
+            self.logger.info(f"Total iterations: {iteration}")
+            self.logger.info(f"Total queries: {self.stats['queries_executed']}")
+            self.logger.info("="*70)
             
-        # Timers for periodic tasks
-        last_policy_update = time.time()
-        last_meta_learning = time.time()
-        last_safety_check = time.time()
-        last_metrics_report = time.time()
+        except Exception as e:
+            self.logger.error(f"Fatal error in system execution: {e}", exc_info=True)
+            self.shutdown()
+            raise
+    
+    def _execute_iteration(self, iteration: int):
+        """Execute a single iteration of the system."""
+        # Generate and execute queries
+        queries = self.workload_generator.generate_batch(10)
         
-        # Phase execution loop
-        while time.time() - phase_start < duration_seconds and self.running:
-            if self.paused:
-                time.sleep(1)
-                continue
-                
+        for query in queries:
             try:
-                # Generate and execute query
-                query, query_type = self.workload_generator.generate_query()
-                state = self._get_database_state()
-                
                 # Execute query through optimizer
-                result = self.query_optimizer.execute_query(
-                    query,
-                    query_type,
-                    state
-                )
+                result = self.query_optimizer.execute_query(query)
                 
-                self.stats["queries_executed"] += 1
-                
-                # Collect telemetry
-                self.telemetry_collector.record_execution(
+                # Record metrics
+                self.telemetry_collector.record_query_execution(
                     query=query,
-                    query_type=query_type,
-                    execution_time=result['execution_time'],
-                    resources=result['resources'],
-                    plan_info=result['plan_info']
+                    latency=result['execution_time'],
+                    success=result['success'],
+                    phase=self.current_phase
                 )
                 
-                # Periodic policy updates (Level 1)
-                if level1 and self.policy_learner:
-                    interval = self.config['level1']['update_interval']
-                    if time.time() - last_policy_update > interval:
-                        self.logger.info("Running policy update (Level 1)...")
-                        updated = self.policy_learner.update_policy()
-                        if updated:
-                            self.stats["policies_updated"] += 1
-                        last_policy_update = time.time()
-                
-                # Periodic meta-learning (Level 2)
-                if level2 and self.meta_learner:
-                    interval = self.config['level2']['evaluation_interval']
-                    if time.time() - last_meta_learning > interval:
-                        self.logger.info("Running meta-learning (Level 2)...")
-                        self.meta_learner.optimize()
-                        self.stats["meta_learner_runs"] += 1
-                        last_meta_learning = time.time()
+                self.stats['queries_executed'] += 1
                 
                 # Safety monitoring
-                if time.time() - last_safety_check > 10:  # Every 10 seconds
-                    safety_status = self.safety_monitor.check_system_health()
-                    if not safety_status['healthy']:
-                        self.logger.warning(f"Safety issue detected: {safety_status['issues']}")
-                        self.stats["safety_events"] += 1
-                        self._handle_safety_event(safety_status)
-                    last_safety_check = time.time()
-                
-                # Periodic metrics reporting
-                if time.time() - last_metrics_report > 300:  # Every 5 minutes
-                    self._log_metrics_summary()
-                    last_metrics_report = time.time()
-                
-                # Small delay between queries
-                time.sleep(0.1)
+                if self.safety_monitor:
+                    self.safety_monitor.check_query_safety(result)
                 
             except Exception as e:
-                self.logger.error(f"Error in execution loop: {e}", exc_info=True)
-                time.sleep(1)
-                
-        elapsed = time.time() - phase_start
-        self.logger.info(f"Phase {phase_name} completed in {elapsed:.1f} seconds")
-        self._log_phase_summary(phase_name)
-        
-    def _get_database_state(self) -> Dict[str, Any]:
-        """Get current database state for optimizer."""
-        try:
-            state = {
-                'cache_hit_rate': self.db_manager.get_cache_hit_rate(),
-                'connection_count': self.db_manager.get_connection_count(),
-                'table_sizes': self.db_manager.get_table_sizes(),
-                'index_usage': self.db_manager.get_index_usage(),
-                'load_average': self.telemetry_collector.get_system_load()
-            }
-            return state
-        except Exception as e:
-            self.logger.warning(f"Error getting database state: {e}")
-            return {}
-            
-    def _handle_safety_event(self, safety_status: Dict[str, Any]):
-        """Handle safety events."""
-        if safety_status['severity'] == 'critical':
-            self.logger.error("Critical safety event - initiating rollback")
-            if self.policy_learner:
-                self.policy_learner.rollback_policy()
-        elif safety_status['severity'] == 'warning':
-            self.logger.warning("Safety warning - monitoring closely")
-            
-    def _log_metrics_summary(self):
-        """Log summary of current metrics."""
-        try:
-            metrics = self.telemetry_storage.get_recent_metrics(minutes=5)
-            if metrics:
-                summary = self.metrics_calculator.calculate_summary(metrics)
-                self.logger.info(
-                    f"Metrics - Avg Latency: {summary['avg_latency']:.1f}ms, "
-                    f"P99: {summary['p99_latency']:.1f}ms, "
-                    f"Queries: {self.stats['queries_executed']}"
+                self.logger.error(f"Query execution failed: {e}")
+                self.telemetry_collector.record_query_execution(
+                    query=query,
+                    latency=0,
+                    success=False,
+                    phase=self.current_phase
                 )
-        except Exception as e:
-            self.logger.warning(f"Error logging metrics: {e}")
-            
-    def _log_phase_summary(self, phase_name: str):
-        """Log summary statistics for completed phase."""
-        try:
-            metrics = self.telemetry_storage.get_phase_metrics(phase_name)
-            summary = self.metrics_calculator.calculate_summary(metrics)
-            
-            self.logger.info(f"\n{'='*60}")
-            self.logger.info(f"Phase Summary: {phase_name}")
-            self.logger.info(f"{'='*60}")
-            self.logger.info(f"Queries Executed: {len(metrics)}")
-            self.logger.info(f"Average Latency: {summary['avg_latency']:.2f}ms")
-            self.logger.info(f"P50 Latency: {summary['p50_latency']:.2f}ms")
-            self.logger.info(f"P95 Latency: {summary['p95_latency']:.2f}ms")
-            self.logger.info(f"P99 Latency: {summary['p99_latency']:.2f}ms")
-            self.logger.info(f"Success Rate: {summary['success_rate']:.1f}%")
-            self.logger.info(f"{'='*60}\n")
-            
-        except Exception as e:
-            self.logger.warning(f"Error generating phase summary: {e}")
-            
-    def _generate_final_report(self):
-        """Generate final report of entire run."""
-        self.logger.info("\n" + "="*60)
-        self.logger.info("FINAL REPORT")
-        self.logger.info("="*60)
         
-        try:
-            # Overall statistics
-            self.logger.info(f"Total Runtime: {(datetime.now() - self.start_time).total_seconds() / 3600:.1f} hours")
-            self.logger.info(f"Total Queries: {self.stats['queries_executed']}")
-            self.logger.info(f"Policy Updates: {self.stats['policies_updated']}")
-            self.logger.info(f"Meta-Learning Runs: {self.stats['meta_learner_runs']}")
-            self.logger.info(f"Safety Events: {self.stats['safety_events']}")
-            
-            # Performance comparison
-            baseline_metrics = self.telemetry_storage.get_phase_metrics("baseline")
-            final_metrics = self.telemetry_storage.get_recent_metrics(hours=24)
-            
-            if baseline_metrics and final_metrics:
-                baseline_summary = self.metrics_calculator.calculate_summary(baseline_metrics)
-                final_summary = self.metrics_calculator.calculate_summary(final_metrics)
-                
-                improvement = self.metrics_calculator.calculate_improvement(
-                    baseline_summary,
-                    final_summary
-                )
-                
-                self.logger.info("\nPerformance Improvements:")
-                self.logger.info(f"Average Latency: {improvement['avg_latency']:.1f}%")
-                self.logger.info(f"P99 Latency: {improvement['p99_latency']:.1f}%")
-                self.logger.info(f"Resource Efficiency: {improvement['resource_efficiency']:.1f}%")
-                
-            # Save detailed report
-            report_path = Path(self.config['paths']['data_dir']) / 'final_report.txt'
-            self._save_detailed_report(report_path)
-            self.logger.info(f"\nDetailed report saved to: {report_path}")
-            
-        except Exception as e:
-            self.logger.error(f"Error generating final report: {e}", exc_info=True)
-            
-        self.logger.info("="*60 + "\n")
+        # Periodic policy updates (Level 1)
+        if self.policy_learner and iteration % 100 == 0:
+            try:
+                self.policy_learner.update_policy()
+                self.stats['policies_updated'] += 1
+            except Exception as e:
+                self.logger.error(f"Policy update failed: {e}")
         
-    def _save_detailed_report(self, path: Path):
-        """Save detailed report to file."""
-        # Implementation would write comprehensive report
-        pass
-        
+        # Periodic meta-learning (Level 2)
+        if self.meta_learner and iteration % 1000 == 0:
+            try:
+                self.meta_learner.optimize_hyperparameters()
+                self.stats['meta_learner_runs'] += 1
+            except Exception as e:
+                self.logger.error(f"Meta-learning failed: {e}")
+    
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals."""
         self.logger.info(f"Received signal {signum}, initiating shutdown...")
         self.running = False
-        
+    
     def pause(self):
         """Pause system execution."""
         self.paused = True
         self.logger.info("System paused")
-        
+    
     def resume(self):
         """Resume system execution."""
         self.paused = False
         self.logger.info("System resumed")
-        
+    
     def shutdown(self):
         """Shutdown all components gracefully."""
         self.logger.info("Shutting down system...")
         self.running = False
         
         try:
+            # Save states
             if self.query_optimizer:
+                self.logger.info("Saving query optimizer state...")
                 self.query_optimizer.save_checkpoint()
-            if self.policy_learner:
-                self.policy_learner.save_state()
-            if self.meta_learner:
-                self.meta_learner.save_state()
-            if self.telemetry_collector:
-                self.telemetry_collector.flush()
-            if self.db_manager:
-                self.db_manager.disconnect()
                 
+            if self.policy_learner:
+                self.logger.info("Saving policy learner state...")
+                self.policy_learner.save_state()
+                
+            if self.meta_learner:
+                self.logger.info("Saving meta-learner state...")
+                self.meta_learner.save_state()
+            
+            # Flush telemetry
+            if self.telemetry_collector:
+                self.logger.info("Flushing telemetry data...")
+                self.telemetry_collector.flush()
+            
+            # Disconnect database
+            if self.db_manager:
+                self.logger.info("Closing database connections...")
+                self.db_manager.disconnect()
+            
             self.logger.info("System shutdown complete")
             
         except Exception as e:
@@ -486,34 +351,63 @@ class SystemOrchestrator:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Self-Improving Database Query Optimizer"
+        description="Self-Improving Database Query Optimizer",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Full 2-week simulation
+  python main.py --duration 14
+  
+  # Quick test (1 hour)
+  python main.py --duration 0.04 --fast-mode
+  
+  # Custom configuration
+  python main.py --config custom_config.yaml --duration 7
+        """
     )
     parser.add_argument(
         "--config",
         default="config.yaml",
-        help="Path to configuration file"
+        help="Path to configuration file (default: config.yaml)"
     )
     parser.add_argument(
         "--duration",
         type=float,
         default=14.0,
-        help="Duration to run in days (can be fractional)"
+        help="Duration to run in days (can be fractional, default: 14.0)"
     )
     parser.add_argument(
         "--fast-mode",
         action="store_true",
-        help="Run in fast mode for testing (accelerated time)"
+        help="Run in fast mode for testing (100x time acceleration)"
     )
     
     args = parser.parse_args()
     
-    # Create and start orchestrator
-    orchestrator = SystemOrchestrator(args.config)
-    orchestrator.initialize_components()
-    orchestrator.start(
-        duration_days=args.duration,
-        fast_mode=args.fast_mode
-    )
+    try:
+        # Create and start orchestrator
+        print("\nInitializing System Orchestrator...")
+        orchestrator = SystemOrchestrator(args.config)
+        
+        print("Initializing components...")
+        orchestrator.initialize_components()
+        
+        print("Starting system execution...")
+        orchestrator.start(
+            duration_days=args.duration,
+            fast_mode=args.fast_mode
+        )
+        
+        print("\nSystem execution completed successfully")
+        
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n\nFatal error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

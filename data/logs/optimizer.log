@@ -14456,3 +14456,39 @@ Detailed report saved to: data\final_report.txt
 2025-10-01 15:37:09 - main - INFO - Metrics - Avg Latency: 53.3ms, P99: 556.9ms, Queries: 2091
 2025-10-01 15:42:09 - main - INFO - Metrics - Avg Latency: 45.3ms, P99: 530.1ms, Queries: 3147
 2025-10-01 15:47:09 - main - INFO - Metrics - Avg Latency: 46.6ms, P99: 545.4ms, Queries: 4200
+2025-10-03 13:29:30 - root - INFO - ============================================================
+2025-10-03 13:29:30 - root - INFO - Logging system initialized
+2025-10-03 13:29:30 - root - INFO - Log level: INFO
+2025-10-03 13:29:30 - root - INFO - Log directory: data\logs
+2025-10-03 13:29:30 - root - INFO - ============================================================
+2025-10-03 13:29:31 - root - INFO - ============================================================
+2025-10-03 13:29:31 - root - INFO - Logging system initialized
+2025-10-03 13:29:31 - root - INFO - Log level: INFO
+2025-10-03 13:29:31 - root - INFO - Log directory: data\logs
+2025-10-03 13:29:31 - root - INFO - ============================================================
+2025-10-03 13:29:31 - main - INFO - System Orchestrator initialized
+2025-10-03 13:29:31 - main - INFO - Initializing system components...
+2025-10-03 13:29:31 - main - INFO - Connecting to database...
+2025-10-03 13:29:31 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 13:29:31 - main - INFO - Setting up telemetry...
+2025-10-03 13:29:31 - main - INFO - Initializing workload generator...
+2025-10-03 13:29:31 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 13:29:45 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 13:29:45 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 13:29:45 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 13:29:45 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 13:29:45 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 13:29:45 - main - INFO - Initializing safety monitor...
+2025-10-03 13:29:45 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 13:29:45 - main - INFO - All components initialized successfully
+2025-10-03 13:29:47 - main - INFO - Starting system for 0.001 days
+2025-10-03 13:29:47 - main - INFO - Fast mode enabled - time accelerated
+2025-10-03 13:29:47 - main - INFO - Starting phase: baseline (duration: 0.03 days)
+2025-10-03 13:29:47 - main - INFO - Learning - L0: False, L1: False, L2: False
+2025-10-03 13:29:47 - core.query_optimizer - INFO - Learning disabled
+2025-10-03 13:29:47 - core.policy_learner - INFO - Policy learning disabled
+2025-10-03 13:29:47 - core.meta_learner - INFO - Meta-learning disabled
+2025-10-03 13:34:48 - main - INFO - Metrics - Avg Latency: 52.3ms, P99: 578.8ms, Queries: 1048
+2025-10-03 13:39:48 - main - INFO - Metrics - Avg Latency: 39.1ms, P99: 495.9ms, Queries: 2146
+2025-10-03 13:44:48 - main - INFO - Metrics - Avg Latency: 43.7ms, P99: 497.8ms, Queries: 3230
+2025-10-03 13:49:49 - main - INFO - Metrics - Avg Latency: 48.8ms, P99: 594.1ms, Queries: 4279

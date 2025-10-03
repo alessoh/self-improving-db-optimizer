@@ -1,129 +1,139 @@
+# Database Query Optimizer Configuration
+# =======================================================================
+
+# Database Connection Settings
 database:
   host: localhost
   port: 5432
   user: postgres
-  password: Post2825p! # CHANGE THIS!
+  password: Post2825p!  # CHANGE THIS! Use environment variable in production
   dbname: query_optimizer_demo
   max_connections: 10
   connection_timeout: 30
   
-# Paths
+# File System Paths
 paths:
   data_dir: ./data
   logs_dir: ./data/logs
   policies_dir: ./data/policies
   telemetry_db: ./data/telemetry.db
   
-# Level 0: Operational Layer (RL Agent)
+# Level 0: Operational Layer (Reinforcement Learning Agent)
+# This layer learns to optimize individual query executions
 level0:
-  learning_rate: 0.0003
-  gamma: 0.99  # Discount factor
-  batch_size: 64
-  buffer_size: 10000
-  target_update_freq: 100
-  epsilon_start: 1.0
-  epsilon_end: 0.05
-  epsilon_decay: 0.995
-  hidden_layers: [128, 128]
-  activation: relu
-  optimizer: adam
+  learning_rate: 0.0003          # Adam optimizer learning rate
+  gamma: 0.99                     # Discount factor for future rewards
+  batch_size: 64                  # Training batch size
+  buffer_size: 10000              # Experience replay buffer size
+  target_update_freq: 100         # Update target network every N steps
+  epsilon_start: 1.0              # Initial exploration rate
+  epsilon_end: 0.05               # Minimum exploration rate
+  epsilon_decay: 0.995            # Exploration decay rate
+  hidden_layers: [128, 128]       # Neural network architecture
+  activation: relu                # Activation function
+  optimizer: adam                 # Optimizer type
   
 # Level 1: Tactical Layer (Policy Learning)
+# This layer optimizes the learning policies based on accumulated experience
 level1:
-  enabled: true
-  update_interval: 3600  # Seconds (1 hour)
-  validation_samples: 100
-  validation_threshold: 0.95  # Confidence level
-  min_improvement: 0.02  # 2% minimum improvement
-  learning_rate: 0.001
-  momentum: 0.9
-  weight_decay: 0.0001
+  enabled: true                   # Enable Level 1 learning
+  update_interval: 3600           # Policy update interval in seconds (1 hour)
+  validation_samples: 100         # Number of validation samples
+  validation_threshold: 0.95      # Confidence threshold for policy updates
+  min_improvement: 0.02           # Minimum improvement required (2%)
+  learning_rate: 0.001            # Policy optimizer learning rate
+  momentum: 0.9                   # SGD momentum
+  weight_decay: 0.0001            # L2 regularization weight
   
 # Level 2: Strategic Layer (Meta-Learning)
+# This layer optimizes the hyperparameters of the learning system
 level2:
-  enabled: true
-  evaluation_interval: 86400  # Seconds (1 day)
-  population_size: 5
-  mutation_rate: 0.2
-  crossover_rate: 0.5
-  tournament_size: 2
-  elite_size: 1
+  enabled: true                   # Enable Level 2 meta-learning
+  evaluation_interval: 86400      # Evaluate every N seconds (1 day)
+  population_size: 5              # Size of hyperparameter population
+  mutation_rate: 0.2              # Mutation probability
+  crossover_rate: 0.5             # Crossover probability
+  tournament_size: 2              # Tournament selection size
+  elite_size: 1                   # Number of elite solutions to preserve
   hyperparameter_bounds:
-    learning_rate: [0.0001, 0.01]
-    batch_size: [32, 128]
-    gamma: [0.95, 0.99]
-    epsilon_decay: [0.99, 0.999]
+    learning_rate: [0.0001, 0.01]     # Learning rate search bounds
+    batch_size: [32, 128]             # Batch size search range
+    gamma: [0.95, 0.99]               # Gamma search range
+    epsilon_decay: [0.99, 0.999]      # Epsilon decay search range
     
-# Safety Mechanisms
+# Safety and Monitoring
 safety:
-  enabled: true
-  query_timeout: 30  # Seconds
-  memory_limit_gb: 2
-  cpu_limit_percent: 90
-  rollback_threshold: 0.15  # 15% performance drop
-  max_consecutive_failures: 5
-  validation_required: true
-  sandbox_enabled: true
+  enabled: true                   # Enable safety monitoring
+  query_timeout: 30               # Query timeout in seconds
+  memory_limit_gb: 2              # Maximum memory per query (GB)
+  cpu_limit_percent: 90           # CPU usage threshold
+  rollback_threshold: 0.15        # Performance drop threshold (15%)
+  max_consecutive_failures: 5     # Max failures before rollback
+  validation_required: true       # Require validation before deployment
+  sandbox_enabled: true           # Run queries in sandbox mode
   
 # Workload Configuration
 workload:
-  queries_per_hour: 1000
-  data_scale_factor: 1.0  # 1.0 = ~10M rows
-  query_distribution:
-    select_simple: 0.30
-    join_two_tables: 0.25
-    join_multiple: 0.20
-    aggregation: 0.15
-    analytical: 0.10
+  queries_per_hour: 1000          # Query generation rate
+  data_scale_factor: 1.0          # Data scale (1.0 = ~10M rows)
+  query_distribution:             # Query type distribution (must sum to 1.0)
+    select_simple: 0.30           # Simple SELECT queries
+    join_two_tables: 0.25         # Two-table JOINs
+    join_multiple: 0.20           # Multi-table JOINs
+    aggregation: 0.15             # Aggregation queries (GROUP BY)
+    analytical: 0.10              # Analytical queries (window functions)
   parameter_ranges:
-    limit_rows: [10, 1000]
-    date_range_days: [1, 365]
-    price_range: [1, 10000]
+    limit_rows: [10, 1000]        # LIMIT clause range
+    date_range_days: [1, 365]     # Date range for queries
+    price_range: [1, 10000]       # Price range for filters
     
-# Telemetry and Monitoring
+# Telemetry and Metrics Collection
 telemetry:
-  enabled: true
-  collection_interval: 1  # Seconds
-  retention_days: 30
-  metrics:
+  enabled: true                   # Enable telemetry collection
+  collection_interval: 1          # Collect metrics every N seconds
+  retention_days: 30              # Retain telemetry for N days
+  metrics:                        # Metrics to collect
     - execution_time
     - cpu_usage
     - memory_usage
     - cache_hit_rate
     - rows_processed
     - plan_cost
-  aggregation_interval: 60  # Seconds
+  aggregation_interval: 60        # Aggregate metrics every N seconds
   
 # Dashboard Configuration
+# FIXED: Changed from 0.0.0.0 to 127.0.0.1 for Windows compatibility
 dashboard:
-  enabled: true
-  host: 0.0.0.0
-  port: 5000
-  debug: false
-  auto_refresh: 5  # Seconds
-  chart_history: 1000  # Data points
+  enabled: true                   # Enable web dashboard
+  host: 127.0.0.1                 # Bind to localhost (CHANGED from 0.0.0.0)
+  port: 5000                      # Dashboard port
+  debug: false                    # Flask debug mode (disable in production)
+  auto_refresh: 5                 # Auto-refresh interval in seconds
+  chart_history: 1000             # Number of data points to display
   
 # Logging Configuration
 logging:
-  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO                     # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  rotation: "1 day"
-  retention: "30 days"
-  console_output: true
+  rotation: "1 day"               # Rotate logs daily
+  retention: "30 days"            # Keep logs for 30 days
+  console_output: true            # Also output to console
   
 # Reward Function Weights
+# Used by the RL agent to compute rewards
 rewards:
-  execution_time: -1.0  # Negative = penalty for time
-  memory_usage: -0.1
-  cpu_usage: -0.1
-  cache_hit_rate: 0.5
-  success_bonus: 1.0
-  failure_penalty: -10.0
-  fairness_weight: 0.2
+  execution_time: -1.0            # Penalty for execution time
+  memory_usage: -0.1              # Penalty for memory usage
+  cpu_usage: -0.1                 # Penalty for CPU usage
+  cache_hit_rate: 0.5             # Reward for cache hits
+  success_bonus: 1.0              # Bonus for successful execution
+  failure_penalty: -10.0          # Penalty for query failures
+  fairness_weight: 0.2            # Weight for fairness across query types
   
 # Experimental Features
+# These features are not yet fully tested
 experimental:
-  enable_distributed: false
-  enable_gpu: false
-  enable_mlflow: false
-  enable_profiling: false
+  enable_distributed: false       # Distributed training across nodes
+  enable_gpu: false               # GPU acceleration for neural networks
+  enable_mlflow: false            # MLflow experiment tracking
+  enable_profiling: false         # Detailed performance profiling

@@ -1,45 +1,136 @@
+# Database Query Optimizer Configuration Example
+# =======================================================================
+# Copy this file to config.yaml and update the values for your environment
+# =======================================================================
+
+# Database Connection Settings
 database:
   host: localhost
   port: 5432
   user: postgres
-  password: CHANGE_ME  # Set your PostgreSQL password
+  password: CHANGE_ME              # *** SET YOUR POSTGRESQL PASSWORD HERE ***
   dbname: query_optimizer_demo
   max_connections: 10
-
+  connection_timeout: 30
+  
+# File System Paths
 paths:
   data_dir: ./data
   logs_dir: ./data/logs
   policies_dir: ./data/policies
   telemetry_db: ./data/telemetry.db
-
+  
+# Level 0: Operational Layer (Reinforcement Learning Agent)
 level0:
   learning_rate: 0.0003
   gamma: 0.99
   batch_size: 64
   buffer_size: 10000
-
+  target_update_freq: 100
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay: 0.995
+  hidden_layers: [128, 128]
+  activation: relu
+  optimizer: adam
+  
+# Level 1: Tactical Layer (Policy Learning)
 level1:
   enabled: true
   update_interval: 3600
-
+  validation_samples: 100
+  validation_threshold: 0.95
+  min_improvement: 0.02
+  learning_rate: 0.001
+  momentum: 0.9
+  weight_decay: 0.0001
+  
+# Level 2: Strategic Layer (Meta-Learning)
 level2:
   enabled: true
   evaluation_interval: 86400
-
+  population_size: 5
+  mutation_rate: 0.2
+  crossover_rate: 0.5
+  tournament_size: 2
+  elite_size: 1
+  hyperparameter_bounds:
+    learning_rate: [0.0001, 0.01]
+    batch_size: [32, 128]
+    gamma: [0.95, 0.99]
+    epsilon_decay: [0.99, 0.999]
+    
+# Safety and Monitoring
 safety:
   enabled: true
   query_timeout: 30
   memory_limit_gb: 2
+  cpu_limit_percent: 90
   rollback_threshold: 0.15
-
+  max_consecutive_failures: 5
+  validation_required: true
+  sandbox_enabled: true
+  
+# Workload Configuration
 workload:
   queries_per_hour: 1000
   data_scale_factor: 1.0
-
+  query_distribution:
+    select_simple: 0.30
+    join_two_tables: 0.25
+    join_multiple: 0.20
+    aggregation: 0.15
+    analytical: 0.10
+  parameter_ranges:
+    limit_rows: [10, 1000]
+    date_range_days: [1, 365]
+    price_range: [1, 10000]
+    
+# Telemetry and Metrics Collection
+telemetry:
+  enabled: true
+  collection_interval: 1
+  retention_days: 30
+  metrics:
+    - execution_time
+    - cpu_usage
+    - memory_usage
+    - cache_hit_rate
+    - rows_processed
+    - plan_cost
+  aggregation_interval: 60
+  
+# Dashboard Configuration
+# IMPORTANT: Using 127.0.0.1 for better Windows compatibility
 dashboard:
   enabled: true
-  host: 0.0.0.0
+  host: 127.0.0.1                 # Use 127.0.0.1 instead of 0.0.0.0 for Windows
   port: 5000
-
+  debug: false
+  auto_refresh: 5
+  chart_history: 1000
+  
+# Logging Configuration
 logging:
   level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  rotation: "1 day"
+  retention: "30 days"
+  console_output: true
+  
+# Reward Function Weights
+rewards:
+  execution_time: -1.0
+  memory_usage: -0.1
+  cpu_usage: -0.1
+  cache_hit_rate: 0.5
+  success_bonus: 1.0
+  failure_penalty: -10.0
+  fairness_weight: 0.2
+  
+# Experimental Features
+experimental:
+  enable_distributed: false
+  enable_gpu: false
+  enable_mlflow: false
+  enable_profiling: false
