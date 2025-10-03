@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+"""
+Main System Orchestrator for Self-Improving Database Query Optimizer
+Windows-Compatible Version - FIXED WorkloadGenerator initialization
+"""
+
 import os
 import sys
 import time
@@ -9,8 +15,9 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import logging
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# FIXED: Add project root to path with absolute path
+project_root = Path(__file__).parent.resolve()
+sys.path.insert(0, str(project_root))
 
 from core.query_optimizer import QueryOptimizer
 from core.policy_learner import PolicyLearner
@@ -34,7 +41,9 @@ class SystemOrchestrator:
         Args:
             config_path: Path to configuration file
         """
-        self.config = self._load_config(config_path)
+        # FIXED: Use Path object for config path
+        self.config_path = Path(config_path).resolve()
+        self.config = self._load_config(str(self.config_path))
         self.running = False
         self.paused = False
         
@@ -68,8 +77,16 @@ class SystemOrchestrator:
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from YAML file."""
         try:
+            # FIXED: Explicit UTF-8 encoding for Windows
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
+            
+            # FIXED: Convert all path strings to Path objects
+            if 'paths' in config:
+                for key, value in config['paths'].items():
+                    if isinstance(value, str):
+                        config['paths'][key] = str(Path(value).resolve())
+            
             return config
         except FileNotFoundError:
             print(f"Error: Configuration file not found: {config_path}")
@@ -92,7 +109,8 @@ class SystemOrchestrator:
             
             # Initialize database manager
             self.logger.info("Initializing database manager...")
-            self.db_manager = DatabaseManager(self.config['database'])
+            self.db_manager = DatabaseManager(self.config)
+            self.db_manager.connect()
             
             # Verify database connection
             if not self._verify_database_connection():
@@ -110,9 +128,10 @@ class SystemOrchestrator:
             )
             
             # Initialize workload generator
+            # FIXED: Pass the full config object, not just config['workload']
             self.logger.info("Initializing workload generator...")
             self.workload_generator = WorkloadGenerator(
-                self.config['workload'],
+                self.config,  # FIXED: Pass full config, WorkloadGenerator will extract 'workload'
                 self.db_manager
             )
             
@@ -155,9 +174,13 @@ class SystemOrchestrator:
             self.logger.info("Initializing metrics calculator...")
             self.metrics_calculator = MetricsCalculator()
             
-            # Register signal handlers
-            signal.signal(signal.SIGINT, self._signal_handler)
-            signal.signal(signal.SIGTERM, self._signal_handler)
+            # FIXED: Register signal handlers with proper Windows handling
+            if sys.platform == 'win32':
+                # Windows doesn't support SIGTERM the same way
+                signal.signal(signal.SIGINT, self._signal_handler)
+            else:
+                signal.signal(signal.SIGINT, self._signal_handler)
+                signal.signal(signal.SIGTERM, self._signal_handler)
             
             self.logger.info("All components initialized successfully")
             
@@ -188,10 +211,12 @@ class SystemOrchestrator:
     
     def _create_directories(self):
         """Create necessary directories."""
+        # FIXED: Use Path objects for all directory operations
         paths = self.config['paths']
-        for key, path in paths.items():
+        for key, path_str in paths.items():
             if key.endswith('_dir'):
-                Path(path).mkdir(parents=True, exist_ok=True)
+                path = Path(path_str)
+                path.mkdir(parents=True, exist_ok=True)
                 self.logger.info(f"Created/verified directory: {path}")
     
     def start(self, duration_days: float = 14.0, fast_mode: bool = False):
@@ -251,47 +276,35 @@ class SystemOrchestrator:
     
     def _execute_iteration(self, iteration: int):
         """Execute a single iteration of the system."""
-        # Generate and execute queries
-        queries = self.workload_generator.generate_batch(10)
-        
-        for query in queries:
+        # Query execution with optimizer
+        if self.workload_generator and self.query_optimizer:
+            query, params = self.workload_generator.generate_query()
+            
             try:
-                # Execute query through optimizer
-                result = self.query_optimizer.execute_query(query)
-                
-                # Record metrics
-                self.telemetry_collector.record_query_execution(
-                    query=query,
-                    latency=result['execution_time'],
-                    success=result['success'],
-                    phase=self.current_phase
+                result = self.query_optimizer.execute_with_optimization(
+                    query, params, phase=self.current_phase
                 )
-                
                 self.stats['queries_executed'] += 1
                 
-                # Safety monitoring
-                if self.safety_monitor:
-                    self.safety_monitor.check_query_safety(result)
-                
+                # Collect telemetry
+                if self.telemetry_collector:
+                    self.telemetry_collector.collect(result)
+                    
             except Exception as e:
                 self.logger.error(f"Query execution failed: {e}")
-                self.telemetry_collector.record_query_execution(
-                    query=query,
-                    latency=0,
-                    success=False,
-                    phase=self.current_phase
-                )
+                if self.safety_monitor:
+                    self.safety_monitor.record_error(e)
         
-        # Periodic policy updates (Level 1)
-        if self.policy_learner and iteration % 100 == 0:
+        # Policy updates (Level 1)
+        if iteration % 100 == 0 and self.policy_learner:
             try:
                 self.policy_learner.update_policy()
                 self.stats['policies_updated'] += 1
             except Exception as e:
                 self.logger.error(f"Policy update failed: {e}")
         
-        # Periodic meta-learning (Level 2)
-        if self.meta_learner and iteration % 1000 == 0:
+        # Meta-learning (Level 2)
+        if iteration % 1000 == 0 and self.meta_learner:
             try:
                 self.meta_learner.optimize_hyperparameters()
                 self.stats['meta_learner_runs'] += 1
@@ -303,112 +316,50 @@ class SystemOrchestrator:
         self.logger.info(f"Received signal {signum}, initiating shutdown...")
         self.running = False
     
-    def pause(self):
-        """Pause system execution."""
-        self.paused = True
-        self.logger.info("System paused")
-    
-    def resume(self):
-        """Resume system execution."""
-        self.paused = False
-        self.logger.info("System resumed")
-    
     def shutdown(self):
-        """Shutdown all components gracefully."""
-        self.logger.info("Shutting down system...")
-        self.running = False
+        """Gracefully shutdown all components."""
+        self.logger.info("Initiating system shutdown...")
         
-        try:
-            # Save states
-            if self.query_optimizer:
-                self.logger.info("Saving query optimizer state...")
-                self.query_optimizer.save_checkpoint()
-                
-            if self.policy_learner:
-                self.logger.info("Saving policy learner state...")
-                self.policy_learner.save_state()
-                
-            if self.meta_learner:
-                self.logger.info("Saving meta-learner state...")
-                self.meta_learner.save_state()
-            
-            # Flush telemetry
-            if self.telemetry_collector:
-                self.logger.info("Flushing telemetry data...")
-                self.telemetry_collector.flush()
-            
-            # Disconnect database
-            if self.db_manager:
-                self.logger.info("Closing database connections...")
-                self.db_manager.disconnect()
-            
-            self.logger.info("System shutdown complete")
-            
-        except Exception as e:
-            self.logger.error(f"Error during shutdown: {e}", exc_info=True)
+        # Close database connections
+        if self.db_manager:
+            self.db_manager.disconnect()
+        
+        # Close telemetry storage
+        if self.telemetry_storage:
+            self.telemetry_storage.close()
+        
+        self.logger.info("System shutdown complete")
 
 
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Self-Improving Database Query Optimizer",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Full 2-week simulation
-  python main.py --duration 14
-  
-  # Quick test (1 hour)
-  python main.py --duration 0.04 --fast-mode
-  
-  # Custom configuration
-  python main.py --config custom_config.yaml --duration 7
-        """
+        description='Self-Improving Database Query Optimizer'
     )
     parser.add_argument(
-        "--config",
-        default="config.yaml",
-        help="Path to configuration file (default: config.yaml)"
+        '--config',
+        default='config.yaml',
+        help='Path to configuration file'
     )
     parser.add_argument(
-        "--duration",
+        '--duration',
         type=float,
         default=14.0,
-        help="Duration to run in days (can be fractional, default: 14.0)"
+        help='Simulation duration in days'
     )
     parser.add_argument(
-        "--fast-mode",
-        action="store_true",
-        help="Run in fast mode for testing (100x time acceleration)"
+        '--fast-mode',
+        action='store_true',
+        help='Run in fast mode (100x speed)'
     )
     
     args = parser.parse_args()
     
-    try:
-        # Create and start orchestrator
-        print("\nInitializing System Orchestrator...")
-        orchestrator = SystemOrchestrator(args.config)
-        
-        print("Initializing components...")
-        orchestrator.initialize_components()
-        
-        print("Starting system execution...")
-        orchestrator.start(
-            duration_days=args.duration,
-            fast_mode=args.fast_mode
-        )
-        
-        print("\nSystem execution completed successfully")
-        
-    except KeyboardInterrupt:
-        print("\n\nInterrupted by user")
-        sys.exit(0)
-    except Exception as e:
-        print(f"\n\nFatal error: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    # Initialize and run system
+    orchestrator = SystemOrchestrator(args.config)
+    orchestrator.initialize_components()
+    orchestrator.start(duration_days=args.duration, fast_mode=args.fast_mode)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

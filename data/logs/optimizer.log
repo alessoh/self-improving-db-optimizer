@@ -14492,3 +14492,86 @@ Detailed report saved to: data\final_report.txt
 2025-10-03 13:39:48 - main - INFO - Metrics - Avg Latency: 39.1ms, P99: 495.9ms, Queries: 2146
 2025-10-03 13:44:48 - main - INFO - Metrics - Avg Latency: 43.7ms, P99: 497.8ms, Queries: 3230
 2025-10-03 13:49:49 - main - INFO - Metrics - Avg Latency: 48.8ms, P99: 594.1ms, Queries: 4279
+2025-10-03 15:48:55 - root - INFO - ============================================================
+2025-10-03 15:48:55 - root - INFO - Logging system initialized
+2025-10-03 15:48:55 - root - INFO - Log level: INFO
+2025-10-03 15:48:55 - root - INFO - Log directory: data\logs
+2025-10-03 15:48:55 - root - INFO - ============================================================
+2025-10-03 15:48:55 - root - INFO - ============================================================
+2025-10-03 15:48:55 - root - INFO - Logging system initialized
+2025-10-03 15:48:55 - root - INFO - Log level: INFO
+2025-10-03 15:48:55 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:48:55 - root - INFO - ============================================================
+2025-10-03 15:48:55 - main - INFO - System Orchestrator initialized
+2025-10-03 15:48:55 - main - INFO - Initializing system components...
+2025-10-03 15:48:55 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 15:48:55 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:48:55 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 15:48:55 - main - INFO - Initializing database manager...
+2025-10-03 15:48:55 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 15:48:55 - main - INFO - Database connection verified successfully
+2025-10-03 15:48:55 - main - INFO - Initializing telemetry storage...
+2025-10-03 15:48:55 - main - INFO - Initializing telemetry collector...
+2025-10-03 15:48:55 - main - INFO - Initializing workload generator...
+2025-10-03 15:48:55 - main - ERROR - Failed to initialize components: 'workload'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 132, in initialize_components
+    self.workload_generator = WorkloadGenerator(
+                              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\database\workload_generator.py", line 19, in __init__
+    self.workload_config = config['workload']
+                           ~~~~~~^^^^^^^^^^^^
+KeyError: 'workload'
+2025-10-03 15:48:55 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 118, in run_demo
+    orchestrator.initialize_components()
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 132, in initialize_components
+    self.workload_generator = WorkloadGenerator(
+                              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\database\workload_generator.py", line 19, in __init__
+    self.workload_config = config['workload']
+                           ~~~~~~^^^^^^^^^^^^
+KeyError: 'workload'
+2025-10-03 15:52:00 - root - INFO - ============================================================
+2025-10-03 15:52:00 - root - INFO - Logging system initialized
+2025-10-03 15:52:00 - root - INFO - Log level: INFO
+2025-10-03 15:52:00 - root - INFO - Log directory: data\logs
+2025-10-03 15:52:00 - root - INFO - ============================================================
+2025-10-03 15:52:00 - root - INFO - ============================================================
+2025-10-03 15:52:00 - root - INFO - Logging system initialized
+2025-10-03 15:52:00 - root - INFO - Log level: INFO
+2025-10-03 15:52:00 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:52:00 - root - INFO - ============================================================
+2025-10-03 15:52:00 - main - INFO - System Orchestrator initialized
+2025-10-03 15:52:00 - main - INFO - Initializing system components...
+2025-10-03 15:52:00 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 15:52:00 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 15:52:00 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 15:52:00 - main - INFO - Initializing database manager...
+2025-10-03 15:52:00 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 15:52:00 - main - INFO - Database connection verified successfully
+2025-10-03 15:52:00 - main - INFO - Initializing telemetry storage...
+2025-10-03 15:52:00 - main - INFO - Initializing telemetry collector...
+2025-10-03 15:52:00 - main - INFO - Initializing workload generator...
+2025-10-03 15:52:00 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 15:52:00 - main - ERROR - Failed to initialize components: 'level0'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 140, in initialize_components
+    self.query_optimizer = QueryOptimizer(
+                           ^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\core\query_optimizer.py", line 36, in __init__
+    self.level0_config = config['level0']
+                         ~~~~~~^^^^^^^^^^
+KeyError: 'level0'
+2025-10-03 15:52:00 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 118, in run_demo
+    orchestrator.initialize_components()
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 140, in initialize_components
+    self.query_optimizer = QueryOptimizer(
+                           ^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\core\query_optimizer.py", line 36, in __init__
+    self.level0_config = config['level0']
+                         ~~~~~~^^^^^^^^^^
+KeyError: 'level0'

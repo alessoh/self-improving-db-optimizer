@@ -14135,3 +14135,43 @@ Traceback (most recent call last):
     loss = F.mse_loss(current_q_values.squeeze(), target_q_values)
            ^
 NameError: name 'F' is not defined
+2025-10-03 15:48:55 - main - ERROR - Failed to initialize components: 'workload'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 132, in initialize_components
+    self.workload_generator = WorkloadGenerator(
+                              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\database\workload_generator.py", line 19, in __init__
+    self.workload_config = config['workload']
+                           ~~~~~~^^^^^^^^^^^^
+KeyError: 'workload'
+2025-10-03 15:48:55 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 118, in run_demo
+    orchestrator.initialize_components()
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 132, in initialize_components
+    self.workload_generator = WorkloadGenerator(
+                              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\database\workload_generator.py", line 19, in __init__
+    self.workload_config = config['workload']
+                           ~~~~~~^^^^^^^^^^^^
+KeyError: 'workload'
+2025-10-03 15:52:00 - main - ERROR - Failed to initialize components: 'level0'
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 140, in initialize_components
+    self.query_optimizer = QueryOptimizer(
+                           ^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\core\query_optimizer.py", line 36, in __init__
+    self.level0_config = config['level0']
+                         ~~~~~~^^^^^^^^^^
+KeyError: 'level0'
+2025-10-03 15:52:00 - __main__ - ERROR - Demo failed
+Traceback (most recent call last):
+  File "C:\Users\hales\self-improving-db-optimizer\run_demo.py", line 118, in run_demo
+    orchestrator.initialize_components()
+  File "C:\Users\hales\self-improving-db-optimizer\main.py", line 140, in initialize_components
+    self.query_optimizer = QueryOptimizer(
+                           ^^^^^^^^^^^^^^^
+  File "C:\Users\hales\self-improving-db-optimizer\core\query_optimizer.py", line 36, in __init__
+    self.level0_config = config['level0']
+                         ~~~~~~^^^^^^^^^^
+KeyError: 'level0'
