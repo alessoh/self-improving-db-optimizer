@@ -14970,3 +14970,147 @@ AttributeError: 'SafetyMonitor' object has no attribute 'record_error'
 2025-10-03 16:14:21 - main - INFO - Total iterations: 548
 2025-10-03 16:14:21 - main - INFO - Total queries: 548
 2025-10-03 16:14:21 - main - INFO - ======================================================================
+2025-10-03 16:47:31 - root - INFO - ============================================================
+2025-10-03 16:47:31 - root - INFO - Logging system initialized
+2025-10-03 16:47:31 - root - INFO - Log level: INFO
+2025-10-03 16:47:31 - root - INFO - Log directory: data\logs
+2025-10-03 16:47:31 - root - INFO - ============================================================
+2025-10-03 16:47:31 - root - INFO - ============================================================
+2025-10-03 16:47:31 - root - INFO - Logging system initialized
+2025-10-03 16:47:31 - root - INFO - Log level: INFO
+2025-10-03 16:47:31 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:47:31 - root - INFO - ============================================================
+2025-10-03 16:47:31 - main - INFO - System Orchestrator initialized
+2025-10-03 16:47:31 - main - INFO - Initializing system components...
+2025-10-03 16:47:31 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:47:31 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:47:31 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:47:31 - main - INFO - Initializing database manager...
+2025-10-03 16:47:31 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:47:31 - main - INFO - Database connection verified successfully
+2025-10-03 16:47:31 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:47:31 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:47:31 - main - INFO - Initializing workload generator...
+2025-10-03 16:47:31 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:47:38 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:47:38 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:47:38 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:47:38 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:47:38 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:47:38 - main - INFO - Initializing safety monitor...
+2025-10-03 16:47:38 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:47:38 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:47:38 - main - INFO - All components initialized successfully
+2025-10-03 16:47:40 - main - INFO - ======================================================================
+2025-10-03 16:47:40 - main - INFO - Starting system - Duration: 0.01 days
+2025-10-03 16:47:40 - main - INFO - Fast mode: True
+2025-10-03 16:47:40 - main - INFO - ======================================================================
+2025-10-03 16:47:40 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:47:40 - core.policy_learner - INFO - Insufficient samples (0) for update
+2025-10-03 16:47:40 - core.meta_learner - INFO - Running meta-learning generation 0
+2025-10-03 16:47:40 - core.meta_learner - INFO - New best chromosome found! Fitness: 0.9707
+2025-10-03 16:47:40 - core.meta_learner - INFO - Applied best hyperparameters: {'learning_rate': 0.001766814782241574, 'batch_size': 114, 'gamma': 0.9851356604610589, 'epsilon_decay': 0.9942879770959024}
+2025-10-03 16:47:49 - main - INFO - Initiating system shutdown...
+2025-10-03 16:47:49 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:47:49 - main - INFO - System shutdown complete
+2025-10-03 16:47:49 - main - INFO - ======================================================================
+2025-10-03 16:47:49 - main - INFO - System execution completed
+2025-10-03 16:47:49 - main - INFO - Total iterations: 51
+2025-10-03 16:47:49 - main - INFO - Total queries: 51
+2025-10-03 16:47:49 - main - INFO - ======================================================================
+2025-10-03 16:53:13 - root - INFO - ============================================================
+2025-10-03 16:53:13 - root - INFO - Logging system initialized
+2025-10-03 16:53:13 - root - INFO - Log level: INFO
+2025-10-03 16:53:13 - root - INFO - Log directory: data\logs
+2025-10-03 16:53:13 - root - INFO - ============================================================
+2025-10-03 16:53:13 - root - INFO - ============================================================
+2025-10-03 16:53:13 - root - INFO - Logging system initialized
+2025-10-03 16:53:13 - root - INFO - Log level: INFO
+2025-10-03 16:53:13 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:53:13 - root - INFO - ============================================================
+2025-10-03 16:53:13 - main - INFO - System Orchestrator initialized
+2025-10-03 16:53:13 - main - INFO - Initializing system components...
+2025-10-03 16:53:13 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:53:13 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:53:13 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:53:13 - main - INFO - Initializing database manager...
+2025-10-03 16:53:13 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:53:13 - main - INFO - Database connection verified successfully
+2025-10-03 16:53:13 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:53:13 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:53:13 - main - INFO - Initializing workload generator...
+2025-10-03 16:53:13 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:53:15 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:53:15 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:53:15 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:53:15 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:53:15 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:53:15 - main - INFO - Initializing safety monitor...
+2025-10-03 16:53:15 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:53:15 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:53:15 - main - INFO - All components initialized successfully
+2025-10-03 16:53:17 - main - INFO - ======================================================================
+2025-10-03 16:53:17 - main - INFO - Starting system - Duration: 0.01 days
+2025-10-03 16:53:17 - main - INFO - Fast mode: True
+2025-10-03 16:53:17 - main - INFO - ======================================================================
+2025-10-03 16:53:17 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:53:17 - core.policy_learner - INFO - Insufficient samples (0) for update
+2025-10-03 16:53:17 - core.meta_learner - INFO - Running meta-learning generation 0
+2025-10-03 16:53:17 - core.meta_learner - INFO - New best chromosome found! Fitness: 0.9707
+2025-10-03 16:53:17 - core.meta_learner - INFO - Applied best hyperparameters: {'learning_rate': 0.004118033529861808, 'batch_size': 43, 'gamma': 0.9653969005340193, 'epsilon_decay': 0.9955325475511043}
+2025-10-03 16:53:26 - main - INFO - Initiating system shutdown...
+2025-10-03 16:53:26 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:53:26 - main - INFO - System shutdown complete
+2025-10-03 16:53:26 - main - INFO - ======================================================================
+2025-10-03 16:53:26 - main - INFO - System execution completed
+2025-10-03 16:53:26 - main - INFO - Total iterations: 57
+2025-10-03 16:53:26 - main - INFO - Total queries: 57
+2025-10-03 16:53:26 - main - INFO - ======================================================================
+2025-10-03 16:58:37 - root - INFO - ============================================================
+2025-10-03 16:58:37 - root - INFO - Logging system initialized
+2025-10-03 16:58:37 - root - INFO - Log level: INFO
+2025-10-03 16:58:37 - root - INFO - Log directory: data\logs
+2025-10-03 16:58:37 - root - INFO - ============================================================
+2025-10-03 16:58:37 - root - INFO - ============================================================
+2025-10-03 16:58:37 - root - INFO - Logging system initialized
+2025-10-03 16:58:37 - root - INFO - Log level: INFO
+2025-10-03 16:58:37 - root - INFO - Log directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:58:37 - root - INFO - ============================================================
+2025-10-03 16:58:37 - main - INFO - System Orchestrator initialized
+2025-10-03 16:58:37 - main - INFO - Initializing system components...
+2025-10-03 16:58:37 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data
+2025-10-03 16:58:37 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\logs
+2025-10-03 16:58:37 - main - INFO - Created/verified directory: C:\Users\hales\self-improving-db-optimizer\data\policies
+2025-10-03 16:58:37 - main - INFO - Initializing database manager...
+2025-10-03 16:58:37 - database.database_manager - INFO - Connected to PostgreSQL: PostgreSQL 17.0 on x86_64-windows, compiled by msvc-19.41.34120, 64-bit
+2025-10-03 16:58:37 - main - INFO - Database connection verified successfully
+2025-10-03 16:58:37 - main - INFO - Initializing telemetry storage...
+2025-10-03 16:58:37 - main - INFO - Initializing telemetry collector...
+2025-10-03 16:58:37 - main - INFO - Initializing workload generator...
+2025-10-03 16:58:37 - main - INFO - Initializing query optimizer (Level 0)...
+2025-10-03 16:58:38 - core.query_optimizer - INFO - Query Optimizer (Level 0) initialized
+2025-10-03 16:58:38 - main - INFO - Initializing policy learner (Level 1)...
+2025-10-03 16:58:38 - core.policy_learner - INFO - Policy Learner (Level 1) initialized
+2025-10-03 16:58:38 - main - INFO - Initializing meta-learner (Level 2)...
+2025-10-03 16:58:38 - core.meta_learner - INFO - Meta-Learner (Level 2) initialized
+2025-10-03 16:58:38 - main - INFO - Initializing safety monitor...
+2025-10-03 16:58:38 - core.safety_monitor - INFO - Safety Monitor initialized
+2025-10-03 16:58:38 - main - INFO - Initializing metrics calculator...
+2025-10-03 16:58:38 - main - INFO - All components initialized successfully
+2025-10-03 16:58:40 - main - INFO - ======================================================================
+2025-10-03 16:58:40 - main - INFO - Starting system - Duration: 0.01 days
+2025-10-03 16:58:40 - main - INFO - Fast mode: True
+2025-10-03 16:58:40 - main - INFO - ======================================================================
+2025-10-03 16:58:40 - core.policy_learner - INFO - Analyzing telemetry for policy update...
+2025-10-03 16:58:40 - core.policy_learner - INFO - Insufficient samples (0) for update
+2025-10-03 16:58:40 - core.meta_learner - INFO - Running meta-learning generation 0
+2025-10-03 16:58:40 - core.meta_learner - INFO - New best chromosome found! Fitness: 0.9705
+2025-10-03 16:58:40 - core.meta_learner - INFO - Applied best hyperparameters: {'learning_rate': 0.005277794958084949, 'batch_size': 93, 'gamma': 0.9729956571279431, 'epsilon_decay': 0.9950540792101047}
+2025-10-03 16:58:49 - main - INFO - Initiating system shutdown...
+2025-10-03 16:58:49 - database.database_manager - INFO - Database connections closed
+2025-10-03 16:58:49 - main - INFO - System shutdown complete
+2025-10-03 16:58:49 - main - INFO - ======================================================================
+2025-10-03 16:58:49 - main - INFO - System execution completed
+2025-10-03 16:58:49 - main - INFO - Total iterations: 53
+2025-10-03 16:58:49 - main - INFO - Total queries: 53
+2025-10-03 16:58:49 - main - INFO - ======================================================================

@@ -1,48 +1,45 @@
-#!/usr/bin/env python
 """
-Dashboard Server for Database Query Optimizer
-Windows-Compatible Version with All Fixes Applied
+Fixed Dashboard for Database Query Optimizer
+Works with actual telemetry.db schema
 """
 
-import os
 import sys
-import json
-from pathlib import Path
 from flask import Flask, render_template, jsonify
-from datetime import datetime
+from pathlib import Path
 import sqlite3
-from typing import Dict, List, Optional
+from datetime import datetime
+from typing import Optional, List, Dict
+import traceback
 
-# FIXED: Ensure UTF-8 encoding for Windows
-import locale
-locale.setlocale(locale.LC_ALL, '')
-
+# Create Flask app with explicit paths
 app = Flask(__name__, 
             template_folder='dashboard/templates',
             static_folder='dashboard/static')
 
+app.config['PROPAGATE_EXCEPTIONS'] = True
+
 
 class DashboardData:
-    """Fetches and processes data for the dashboard."""
+    """Handles data retrieval for dashboard."""
     
     def __init__(self, db_path: str = "data/telemetry.db"):
-        # FIXED: Use Path object for Windows compatibility
         self.db_path = Path(db_path).resolve()
+        print(f"Database path: {self.db_path}", file=sys.stderr)
     
-    def get_connection(self):
+    def get_connection(self) -> Optional[sqlite3.Connection]:
         """Get database connection."""
-        if not self.db_path.exists():
+        try:
+            if not self.db_path.exists():
+                print(f"Database not found: {self.db_path}", file=sys.stderr)
+                return None
+            return sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
+        except Exception as e:
+            print(f"Database connection error: {e}", file=sys.stderr)
+            traceback.print_exc()
             return None
-        
-        # FIXED: Explicit timeout and check_same_thread for Windows
-        return sqlite3.connect(
-            str(self.db_path),
-            timeout=30.0,
-            check_same_thread=False
-        )
     
-    def get_recent_metrics(self, limit: int = 100) -> List[Dict]:
-        """Get recent query metrics."""
+    def get_recent_metrics(self, limit: int = 200) -> List[Dict]:
+        """Get recent query metrics from metrics table."""
         conn = self.get_connection()
         if not conn:
             return []
@@ -50,26 +47,32 @@ class DashboardData:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT timestamp, latency_ms, success, phase
-                FROM query_metrics
+                SELECT 
+                    timestamp,
+                    phase,
+                    execution_time,
+                    success
+                FROM metrics
                 ORDER BY timestamp DESC
                 LIMIT ?
             """, (limit,))
             
-            results = []
+            metrics = []
             for row in cursor.fetchall():
-                # FIXED: Proper boolean conversion for Windows
-                success_value = bool(row[2]) if row[2] is not None else False
-                results.append({
-                    'timestamp': row[0],
-                    'latency_ms': float(row[1]) if row[1] is not None else 0.0,
-                    'success': success_value,
-                    'phase': str(row[3]) if row[3] else 'unknown'
+                # Convert execution_time from seconds to milliseconds
+                latency_ms = float(row[2]) * 1000 if row[2] else 0.0
+                
+                metrics.append({
+                    'timestamp': float(row[0]) * 1000,  # Convert to JS timestamp (ms)
+                    'phase': str(row[1]) if row[1] else 'unknown',
+                    'latency_ms': round(latency_ms, 2),
+                    'success': bool(row[3])
                 })
             
-            return results
+            return metrics
         except Exception as e:
             print(f"Error fetching recent metrics: {e}", file=sys.stderr)
+            traceback.print_exc()
             return []
         finally:
             conn.close()
@@ -85,12 +88,12 @@ class DashboardData:
             cursor.execute("""
                 SELECT 
                     phase,
-                    COUNT(*) as count,
-                    AVG(latency_ms) as avg_latency,
-                    MIN(latency_ms) as min_latency,
-                    MAX(latency_ms) as max_latency,
+                    COUNT(*) as query_count,
+                    AVG(execution_time) * 1000 as avg_latency,
+                    MIN(execution_time) * 1000 as min_latency,
+                    MAX(execution_time) * 1000 as max_latency,
                     SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as success_rate
-                FROM query_metrics
+                FROM metrics
                 WHERE phase IS NOT NULL
                 GROUP BY phase
                 ORDER BY phase
@@ -100,7 +103,7 @@ class DashboardData:
             for row in cursor.fetchall():
                 phase = str(row[0])
                 summary[phase] = {
-                    'count': int(row[1]),
+                    'query_count': int(row[1]),
                     'avg_latency': round(float(row[2]), 2) if row[2] else 0.0,
                     'min_latency': round(float(row[3]), 2) if row[3] else 0.0,
                     'max_latency': round(float(row[4]), 2) if row[4] else 0.0,
@@ -110,6 +113,7 @@ class DashboardData:
             return summary
         except Exception as e:
             print(f"Error fetching phase summary: {e}", file=sys.stderr)
+            traceback.print_exc()
             return {}
         finally:
             conn.close()
@@ -118,42 +122,38 @@ class DashboardData:
         """Get learning statistics."""
         conn = self.get_connection()
         if not conn:
-            return {}
+            return {'policy_updates': 0, 'meta_learning_runs': 0, 'latest_loss': None}
         
         try:
             cursor = conn.cursor()
             
-            # Get latest learning metrics
+            # Count policy updates
+            cursor.execute("SELECT COUNT(*) FROM policy_updates")
+            policy_updates = cursor.fetchone()[0]
+            
+            # Count meta-learning events
+            cursor.execute("SELECT COUNT(*) FROM meta_learning_events")
+            meta_learning_runs = cursor.fetchone()[0]
+            
+            # Get latest best_fitness from meta-learning
             cursor.execute("""
-                SELECT 
-                    epsilon,
-                    learning_rate,
-                    loss
-                FROM learning_metrics
-                ORDER BY timestamp DESC
+                SELECT best_fitness 
+                FROM meta_learning_events 
+                ORDER BY timestamp DESC 
                 LIMIT 1
             """)
-            
-            row = cursor.fetchone()
-            if row:
-                return {
-                    'latest_epsilon': round(float(row[0]), 4) if row[0] else 1.0,
-                    'latest_lr': float(row[1]) if row[1] else 0.0,
-                    'latest_loss': round(float(row[2]), 6) if row[2] else 0.0
-                }
+            result = cursor.fetchone()
+            latest_loss = float(result[0]) if result else None
             
             return {
-                'latest_epsilon': 1.0,
-                'latest_lr': 0.0,
-                'latest_loss': 0.0
+                'policy_updates': policy_updates,
+                'meta_learning_runs': meta_learning_runs,
+                'latest_loss': latest_loss
             }
         except Exception as e:
             print(f"Error fetching learning stats: {e}", file=sys.stderr)
-            return {
-                'latest_epsilon': 1.0,
-                'latest_lr': 0.0,
-                'latest_loss': 0.0
-            }
+            traceback.print_exc()
+            return {'policy_updates': 0, 'meta_learning_runs': 0, 'latest_loss': None}
         finally:
             conn.close()
     
@@ -166,36 +166,32 @@ class DashboardData:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT latency_ms
-                FROM query_metrics
-                WHERE latency_ms IS NOT NULL
-                ORDER BY latency_ms
+                SELECT execution_time * 1000 as latency_ms
+                FROM metrics
+                WHERE execution_time IS NOT NULL
+                ORDER BY execution_time
             """)
             
-            latencies = [float(row[0]) for row in cursor.fetchall() if row[0] is not None]
+            latencies = [float(row[0]) for row in cursor.fetchall() if row[0]]
+            
             if not latencies:
                 return {'p50': 0, 'p95': 0, 'p99': 0, 'p999': 0}
             
-            # FIXED: Safe percentile calculation for Windows
-            try:
-                import numpy as np
-                return {
-                    'p50': round(float(np.percentile(latencies, 50)), 2),
-                    'p95': round(float(np.percentile(latencies, 95)), 2),
-                    'p99': round(float(np.percentile(latencies, 99)), 2),
-                    'p999': round(float(np.percentile(latencies, 99.9)), 2)
-                }
-            except ImportError:
-                # Fallback if numpy not available
-                n = len(latencies)
-                return {
-                    'p50': round(latencies[int(n * 0.50)], 2),
-                    'p95': round(latencies[int(n * 0.95)], 2),
-                    'p99': round(latencies[int(n * 0.99)], 2),
-                    'p999': round(latencies[int(n * 0.999)], 2)
-                }
+            n = len(latencies)
+            
+            def get_percentile(data, pct):
+                idx = max(0, min(int(len(data) * pct / 100.0), len(data) - 1))
+                return round(data[idx], 2)
+            
+            return {
+                'p50': get_percentile(latencies, 50),
+                'p95': get_percentile(latencies, 95),
+                'p99': get_percentile(latencies, 99),
+                'p999': get_percentile(latencies, 99.9)
+            }
         except Exception as e:
             print(f"Error fetching latency distribution: {e}", file=sys.stderr)
+            traceback.print_exc()
             return {'p50': 0, 'p95': 0, 'p99': 0, 'p999': 0}
         finally:
             conn.close()
@@ -207,7 +203,25 @@ dashboard_data = DashboardData()
 @app.route('/')
 def index():
     """Render main dashboard page."""
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        print(f"Template error: {e}", file=sys.stderr)
+        traceback.print_exc()
+        # Return a basic HTML page if template fails
+        return f"""
+        <html>
+        <head><title>Dashboard Error</title></head>
+        <body>
+            <h1>Template Error</h1>
+            <p>Could not load dashboard template.</p>
+            <p>Error: {str(e)}</p>
+            <pre>{traceback.format_exc()}</pre>
+            <p>Template folder: {app.template_folder}</p>
+            <p>Expected: dashboard/templates/index.html</p>
+        </body>
+        </html>
+        """, 500
 
 
 @app.route('/api/metrics')
@@ -218,7 +232,8 @@ def api_metrics():
         return jsonify(metrics)
     except Exception as e:
         print(f"Error in /api/metrics: {e}", file=sys.stderr)
-        return jsonify([]), 500
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/phase-summary')
@@ -229,7 +244,8 @@ def api_phase_summary():
         return jsonify(summary)
     except Exception as e:
         print(f"Error in /api/phase-summary: {e}", file=sys.stderr)
-        return jsonify({}), 500
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/learning-stats')
@@ -240,7 +256,8 @@ def api_learning_stats():
         return jsonify(stats)
     except Exception as e:
         print(f"Error in /api/learning-stats: {e}", file=sys.stderr)
-        return jsonify({}), 500
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/latency-distribution')
@@ -251,7 +268,8 @@ def api_latency_distribution():
         return jsonify(distribution)
     except Exception as e:
         print(f"Error in /api/latency-distribution: {e}", file=sys.stderr)
-        return jsonify({}), 500
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/status')
@@ -259,67 +277,76 @@ def api_status():
     """API endpoint for system status."""
     try:
         db_exists = dashboard_data.db_path.exists()
+        
+        # Get table info if DB exists
+        tables = []
+        row_counts = {}
+        if db_exists:
+            conn = dashboard_data.get_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = [row[0] for row in cursor.fetchall()]
+                
+                # Get row counts
+                for table in tables:
+                    if table != 'sqlite_sequence':
+                        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                        row_counts[table] = cursor.fetchone()[0]
+                
+                conn.close()
+        
         return jsonify({
             'status': 'running' if db_exists else 'no_database',
             'timestamp': datetime.now().isoformat(),
             'db_exists': db_exists,
-            'db_path': str(dashboard_data.db_path)
+            'db_path': str(dashboard_data.db_path),
+            'tables': tables,
+            'row_counts': row_counts
         })
     except Exception as e:
         print(f"Error in /api/status: {e}", file=sys.stderr)
+        traceback.print_exc()
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
-def check_prerequisites():
-    """Check if prerequisites are met."""
-    # FIXED: Use Path objects
-    data_dir = Path('data')
-    
-    if not data_dir.exists():
-        print("\nError: 'data' directory not found.")
-        print("Please run 'python setup_database.py' first to initialize the database.\n")
-        return False
-    
-    if not dashboard_data.db_path.exists():
-        print(f"\nWarning: Telemetry database not found at {dashboard_data.db_path}")
-        print("The dashboard will start but no data will be displayed until you:")
-        print("  1. Run 'python setup_database.py' to initialize the database")
-        print("  2. Run 'python run_demo.py' to generate data\n")
-    
-    return True
 
 
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("  Database Query Optimizer - Dashboard")
+    print("  Database Query Optimizer - Dashboard (FIXED)")
     print("="*70)
     
-    if not check_prerequisites():
+    # Check prerequisites
+    data_dir = Path('data')
+    if not data_dir.exists():
+        print("Error: 'data' directory not found.")
         sys.exit(1)
     
-    print(f"  Dashboard URLs:")
-    print(f"    - http://localhost:5000")
-    print(f"    - http://127.0.0.1:5000")
-    print(f"  Database: {dashboard_data.db_path}")
-    print(f"  Database exists: {dashboard_data.db_path.exists()}")
-    print("="*70)
-    print("\nStarting Flask server...")
-    print("Press CTRL+C to stop the server\n")
+    if not dashboard_data.db_path.exists():
+        print(f"Warning: Database not found at {dashboard_data.db_path}")
+    else:
+        print(f"✓ Database found: {dashboard_data.db_path}")
     
-    # FIXED: Use 127.0.0.1 for Windows compatibility, disable reloader
+    template_path = Path('dashboard/templates/index.html')
+    if not template_path.exists():
+        print(f"✗ Template missing: {template_path}")
+        print("  Please check your project structure.")
+    else:
+        print(f"✓ Template found: {template_path}")
+    
+    print(f"\nDashboard URLs:")
+    print(f"  - http://localhost:5000")
+    print(f"  - http://127.0.0.1:5000")
+    print("="*70)
+    print("Starting server... Press CTRL+C to stop\n")
+    
     try:
         app.run(
-            debug=False,  # FIXED: Disabled debug for stability
-            host='127.0.0.1',  # FIXED: localhost only
+            debug=True,
+            host='127.0.0.1',
             port=5000,
-            use_reloader=False  # FIXED: Disabled reloader for Windows
+            use_reloader=False
         )
     except Exception as e:
-        print(f"\nError starting dashboard: {e}", file=sys.stderr)
-        print("\nTroubleshooting:")
-        print("  1. Check if port 5000 is already in use")
-        print("  2. Try running as administrator")
-        print("  3. Check Windows Firewall settings")
-        print("\nTo find process using port 5000:")
-        print("  netstat -ano | findstr :5000")
+        print(f"\nError: {e}", file=sys.stderr)
+        traceback.print_exc()
         sys.exit(1)
