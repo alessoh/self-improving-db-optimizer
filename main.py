@@ -1,3 +1,10 @@
+"""
+Main orchestrator for the Self-Improving Database Query Optimizer.
+
+This module coordinates all system components across the three-tier
+learning architecture.
+"""
+
 import os
 import sys
 import time
@@ -124,7 +131,6 @@ class SystemOrchestrator:
             )
             
             # Initialize workload generator
-            # FIXED: Pass full config - WorkloadGenerator extracts config['workload'] internally
             self.logger.info("Initializing workload generator...")
             self.workload_generator = WorkloadGenerator(
                 self.config,
@@ -132,7 +138,6 @@ class SystemOrchestrator:
             )
             
             # Initialize query optimizer (Level 0)
-            # FIXED: Pass full config - QueryOptimizer extracts config['level0'] internally
             self.logger.info("Initializing query optimizer (Level 0)...")
             self.query_optimizer = QueryOptimizer(
                 self.config,
@@ -142,7 +147,6 @@ class SystemOrchestrator:
             
             # Initialize policy learner (Level 1)
             if self.config['level1']['enabled']:
-                # FIXED: Pass full config - PolicyLearner extracts config['level1'] internally
                 self.logger.info("Initializing policy learner (Level 1)...")
                 self.policy_learner = PolicyLearner(
                     self.config,
@@ -152,7 +156,6 @@ class SystemOrchestrator:
             
             # Initialize meta-learner (Level 2)
             if self.config['level2']['enabled']:
-                # FIXED: Pass full config - MetaLearner extracts config['level2'] internally
                 self.logger.info("Initializing meta-learner (Level 2)...")
                 self.meta_learner = MetaLearner(
                     self.config,
@@ -163,7 +166,6 @@ class SystemOrchestrator:
             # Initialize safety monitor
             if self.config['safety']['enabled']:
                 self.logger.info("Initializing safety monitor...")
-                # FIXED: SafetyMonitor only needs config and telemetry_storage (not db_manager or collector)
                 self.safety_monitor = SafetyMonitor(
                     self.config,
                     self.telemetry_storage
@@ -190,26 +192,16 @@ class SystemOrchestrator:
     def _verify_database_connection(self) -> bool:
         """Verify database connection is working."""
         try:
-            conn = self.db_manager.get_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            result = cursor.fetchone()
-            cursor.close()
-            self.db_manager.return_connection(conn)
-            
-            if result and result[0] == 1:
-                self.logger.info("Database connection verified successfully")
-                return True
-            else:
-                self.logger.error("Database connection test failed")
-                return False
-                
+            version = self.db_manager.get_version()
+            self.logger.info(f"Connected to PostgreSQL: {version}")
+            self.logger.info("Database connection verified successfully")
+            return True
         except Exception as e:
             self.logger.error(f"Database connection verification failed: {e}")
             return False
     
     def _create_directories(self):
-        """Create necessary directories using Path objects."""
+        """Create necessary directories if they don't exist."""
         paths = self.config['paths']
         for key, path_str in paths.items():
             if key.endswith('_dir'):
@@ -233,6 +225,11 @@ class SystemOrchestrator:
             self.logger.info(f"Starting system - Duration: {duration_days} days")
             self.logger.info(f"Fast mode: {fast_mode}")
             self.logger.info("="*70)
+            # Set initial phase to baseline instead of initialization
+            self.current_phase = "baseline"
+            if self.telemetry_collector:
+                self.telemetry_collector.set_phase("baseline")
+                self.logger.info(f"✓ Telemetry collector phase set to: 'baseline'")
             
             # Calculate time scaling
             time_scale = 100 if fast_mode else 1
@@ -255,7 +252,6 @@ class SystemOrchestrator:
                     break
                 except Exception as e:
                     self.logger.error(f"Error in iteration {iteration}: {e}", exc_info=True)
-                    # FIXED: Record through telemetry_collector
                     if self.telemetry_collector:
                         self.telemetry_collector.record_safety_event({
                             'severity': 'error',
@@ -284,7 +280,6 @@ class SystemOrchestrator:
             query, query_type = self.workload_generator.generate_query()
             
             try:
-                # FIXED: Correct method name is execute_query, needs state parameter
                 state = {
                     'timestamp': time.time(),
                     'phase': self.current_phase,
@@ -295,7 +290,7 @@ class SystemOrchestrator:
                 )
                 self.stats['queries_executed'] += 1
                 
-                # FIXED: Collect telemetry with correct method and parameters
+                # Collect telemetry
                 if self.telemetry_collector:
                     self.telemetry_collector.record_execution(
                         query=query,
@@ -308,7 +303,6 @@ class SystemOrchestrator:
                     
             except Exception as e:
                 self.logger.error(f"Query execution failed: {e}")
-                # FIXED: Record through telemetry_collector, not safety_monitor
                 if self.telemetry_collector:
                     self.telemetry_collector.record_safety_event({
                         'severity': 'error',
@@ -327,11 +321,67 @@ class SystemOrchestrator:
         # Meta-learning (Level 2)
         if iteration % 1000 == 0 and self.meta_learner:
             try:
-                # FIXED: Correct method name is optimize()
                 self.meta_learner.optimize()
                 self.stats['meta_learner_runs'] += 1
             except Exception as e:
                 self.logger.error(f"Meta-learning failed: {e}")
+    
+    def _run_phase(
+        self,
+        phase_name: str,
+        duration: float,
+        level0: bool = False,
+        level1: bool = False,
+        level2: bool = False
+    ):
+        """
+        Run a specific phase of the demonstration.
+        
+        Args:
+            phase_name: Name of the phase
+            duration: Duration in days
+            level0: Enable Level 0 learning
+            level1: Enable Level 1 learning
+            level2: Enable Level 2 learning
+        """
+        self.current_phase = phase_name
+        phase_start = time.time()
+        duration_seconds = duration * 86400
+        
+        # ===== CRITICAL FIX: Set phase in telemetry collector =====
+        if self.telemetry_collector:
+            self.telemetry_collector.set_phase(phase_name)
+            self.logger.info(f"✓ Telemetry collector phase set to: '{phase_name}'")
+        # ===========================================================
+        
+        self.logger.info(f"Starting phase: {phase_name} (duration: {duration} days)")
+        self.logger.info(f"Learning - L0: {level0}, L1: {level1}, L2: {level2}")
+        
+        # Configure learning levels
+        if self.query_optimizer:
+            self.query_optimizer.set_learning_enabled(level0)
+        
+        if self.policy_learner:
+            self.policy_learner.set_enabled(level1)
+        
+        if self.meta_learner:
+            self.meta_learner.set_enabled(level2)
+        
+        # Run phase
+        iteration = 0
+        while self.running and (time.time() - phase_start) < duration_seconds:
+            try:
+                self._execute_iteration(iteration)
+                iteration += 1
+                time.sleep(0.1)  # Small delay between iterations
+                
+            except KeyboardInterrupt:
+                self.logger.info("Received interrupt signal")
+                break
+            except Exception as e:
+                self.logger.error(f"Error in iteration {iteration}: {e}")
+        
+        self.logger.info(f"Phase '{phase_name}' completed: {iteration} iterations")
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals."""
@@ -342,15 +392,20 @@ class SystemOrchestrator:
         """Gracefully shutdown all components."""
         self.logger.info("Initiating system shutdown...")
         
+        # Flush any buffered telemetry
+        if self.telemetry_collector:
+            try:
+                self.telemetry_collector.flush()
+            except Exception as e:
+                self.logger.error(f"Error flushing telemetry: {e}")
+        
         # Close database connections
         if self.db_manager:
             try:
                 self.db_manager.disconnect()
+                self.logger.info("Database connections closed")
             except Exception as e:
                 self.logger.error(f"Error disconnecting database: {e}")
-        
-        # FIXED: TelemetryStorage doesn't have a close() method
-        # SQLite connections are managed internally and closed automatically
         
         self.logger.info("System shutdown complete")
 
