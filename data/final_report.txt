@@ -1,0 +1,69 @@
+
+======================================================================
+DATABASE QUERY OPTIMIZER - PERFORMANCE REPORT
+======================================================================
+Generated: 2025-10-04 13:11:43
+Database: data/telemetry.db
+
+EXECUTION SUMMARY
+======================================================================
+Total Queries Executed: 20,519
+Success Rate: 100.00%
+Failed Queries: 0
+
+QUERY LATENCY STATISTICS
+======================================================================
+Average Latency: 44.97 ms
+Median (P50) Latency: 3.66 ms
+P95 Latency: 331.72 ms
+P99 Latency: 529.73 ms
+Min Latency: 0.00 ms
+Max Latency: 1187.78 ms
+Standard Deviation: 113.47 ms
+
+RESOURCE USAGE
+======================================================================
+Average CPU Usage: nan% (0 samples)
+Average Memory Usage: nan% (0 samples)
+Average Cache Hit Rate: nan% (0 samples)
+
+LEARNING SYSTEM ACTIVITY
+======================================================================
+Policy Updates (Level 1): 0
+Safety Events Logged: 51
+Meta-Learning Generations (Level 2): 7
+
+PHASE BREAKDOWN
+======================================================================
+INITIALIZATION:
+  Queries: 20,519
+  Avg Latency: 44.97 ms
+  P95 Latency: 331.72 ms
+  P99 Latency: 529.73 ms
+
+META-LEARNING DETAILS (Level 2)
+======================================================================
+Generation 0:
+  Best Fitness: 0.9731
+  Avg Fitness: 0.0000
+  Learning Rate: 0.0016139455765992663
+  Batch Size: 49
+  Timestamp: 2025-10-04 13:10:11
+
+Generation 0:
+  Best Fitness: 0.5000
+  Avg Fitness: 0.0000
+  Learning Rate: 0.006726790297013901
+  Batch Size: 93
+  Timestamp: 2025-10-04 13:04:42
+
+Generation 0:
+  Best Fitness: 0.9705
+  Avg Fitness: 0.0000
+  Learning Rate: 0.005277794958084949
+  Batch Size: 93
+  Timestamp: 2025-10-03 16:58:40
+
+======================================================================
+END OF REPORT
+======================================================================

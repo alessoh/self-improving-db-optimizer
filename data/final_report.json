@@ -1,0 +1,31 @@
+{
+  "generated_at": "2025-10-04T13:11:43.387959",
+  "total_queries": 20519,
+  "success_rate": 100.0,
+  "latency_stats": {
+    "avg_ms": 44.96798282234552,
+    "p50_ms": 3.6613941192626953,
+    "p95_ms": 331.7236185073849,
+    "p99_ms": 529.7338438034058,
+    "min_ms": 0.0,
+    "max_ms": 1187.7822875976562,
+    "std_ms": 113.47244899366434
+  },
+  "resource_usage": {
+    "avg_cpu_percent": 0,
+    "avg_memory_percent": 0,
+    "avg_cache_hit_rate": 0
+  },
+  "learning_activity": {
+    "policy_updates": 0,
+    "safety_events": 51,
+    "meta_learning_generations": 7
+  },
+  "phases": {
+    "initialization": {
+      "count": 20519,
+      "avg_latency_ms": 44.96798282234552,
+      "p95_latency_ms": 331.7236185073849
+    }
+  }
+}

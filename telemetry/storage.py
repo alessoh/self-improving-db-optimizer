@@ -1,14 +1,17 @@
 import sqlite3
-import time
-from typing import Dict, Any, List, Optional
-from pathlib import Path
-from datetime import datetime, timedelta
 import json
+import time
 import threading
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+import logging
 
 
 class TelemetryStorage:
-    """Handles persistent storage of telemetry data using SQLite."""
+    """
+    Storage backend for system telemetry with proper JSON handling.
+    Uses SQLite for persistent storage with automatic deserialization.
+    """
     
     def __init__(self, config: Dict[str, Any]):
         """
@@ -22,6 +25,7 @@ class TelemetryStorage:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
         self.lock = threading.Lock()
+        self.logger = logging.getLogger(__name__)
         self._initialize_database()
         
     def _initialize_database(self):
@@ -87,6 +91,39 @@ class TelemetryStorage:
             
             conn.commit()
             conn.close()
+            
+    def _deserialize_json_fields(
+        self, 
+        row: Dict[str, Any], 
+        json_fields: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Deserialize JSON string fields back to Python objects.
+        
+        Args:
+            row: Dictionary representing a database row
+            json_fields: List of field names that contain JSON strings
+            
+        Returns:
+            Dictionary with JSON fields deserialized
+        """
+        result = dict(row)
+        
+        for field in json_fields:
+            if field in result and result[field] is not None:
+                try:
+                    # Handle both string and already-deserialized objects
+                    if isinstance(result[field], str):
+                        result[field] = json.loads(result[field])
+                    # If it's already a dict/list, leave it as is
+                except (json.JSONDecodeError, TypeError) as e:
+                    self.logger.warning(
+                        f"Failed to deserialize {field}: {e}. "
+                        f"Returning empty dict. Value was: {result[field]}"
+                    )
+                    result[field] = {}
+                    
+        return result
         
     def store_metric(self, metric: Dict[str, Any]):
         """
@@ -172,14 +209,14 @@ class TelemetryStorage:
         hours: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
-        Retrieve recent metrics.
+        Retrieve recent metrics with proper JSON deserialization.
         
         Args:
             minutes: Number of minutes to look back
             hours: Number of hours to look back
             
         Returns:
-            List of metric dictionaries
+            List of metric dictionaries with deserialized JSON fields
         """
         if hours:
             cutoff = time.time() - (hours * 3600)
@@ -202,17 +239,28 @@ class TelemetryStorage:
             rows = cursor.fetchall()
             conn.close()
             
-            return [dict(row) for row in rows]
+            # Convert to dicts and deserialize JSON fields
+            results = []
+            for row in rows:
+                row_dict = dict(row)
+                # Deserialize the plan_info JSON field
+                deserialized = self._deserialize_json_fields(
+                    row_dict, 
+                    ['plan_info']
+                )
+                results.append(deserialized)
+                
+            return results
     
     def get_phase_metrics(self, phase: str) -> List[Dict[str, Any]]:
         """
-        Get all metrics for a specific phase.
+        Get all metrics for a specific phase with proper JSON deserialization.
         
         Args:
             phase: Phase name
             
         Returns:
-            List of metric dictionaries
+            List of metric dictionaries with deserialized JSON fields
         """
         with self.lock:
             conn = sqlite3.connect(str(self.db_path))
@@ -228,7 +276,18 @@ class TelemetryStorage:
             rows = cursor.fetchall()
             conn.close()
             
-            return [dict(row) for row in rows]
+            # Convert to dicts and deserialize JSON fields
+            results = []
+            for row in rows:
+                row_dict = dict(row)
+                # Deserialize the plan_info JSON field
+                deserialized = self._deserialize_json_fields(
+                    row_dict, 
+                    ['plan_info']
+                )
+                results.append(deserialized)
+                
+            return results
     
     def store_policy_update(self, update: Dict[str, Any]):
         """
@@ -260,13 +319,13 @@ class TelemetryStorage:
     
     def get_policy_updates(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
-        Get recent policy updates.
+        Get recent policy updates with proper JSON deserialization.
         
         Args:
             limit: Maximum number of updates to return
             
         Returns:
-            List of policy update dictionaries
+            List of policy update dictionaries with deserialized JSON fields
         """
         with self.lock:
             conn = sqlite3.connect(str(self.db_path))
@@ -282,7 +341,18 @@ class TelemetryStorage:
             rows = cursor.fetchall()
             conn.close()
             
-            return [dict(row) for row in rows]
+            # Convert to dicts and deserialize JSON fields
+            results = []
+            for row in rows:
+                row_dict = dict(row)
+                # Deserialize the changes JSON field
+                deserialized = self._deserialize_json_fields(
+                    row_dict, 
+                    ['changes']
+                )
+                results.append(deserialized)
+                
+            return results
     
     def store_safety_event(self, event: Dict[str, Any]):
         """
@@ -314,13 +384,13 @@ class TelemetryStorage:
     
     def get_safety_events(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
-        Get recent safety events.
+        Get recent safety events with proper JSON deserialization.
         
         Args:
             limit: Maximum number of events to return
             
         Returns:
-            List of safety event dictionaries
+            List of safety event dictionaries with deserialized JSON fields
         """
         with self.lock:
             conn = sqlite3.connect(str(self.db_path))
@@ -336,7 +406,18 @@ class TelemetryStorage:
             rows = cursor.fetchall()
             conn.close()
             
-            return [dict(row) for row in rows]
+            # Convert to dicts and deserialize JSON fields
+            results = []
+            for row in rows:
+                row_dict = dict(row)
+                # Deserialize the context JSON field
+                deserialized = self._deserialize_json_fields(
+                    row_dict, 
+                    ['context']
+                )
+                results.append(deserialized)
+                
+            return results
     
     def store_meta_learning_event(self, event: Dict[str, Any]):
         """
@@ -365,6 +446,43 @@ class TelemetryStorage:
             
             conn.commit()
             conn.close()
+    
+    def get_meta_learning_events(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Get recent meta-learning events with proper JSON deserialization.
+        
+        Args:
+            limit: Maximum number of events to return
+            
+        Returns:
+            List of meta-learning event dictionaries with deserialized JSON fields
+        """
+        with self.lock:
+            conn = sqlite3.connect(str(self.db_path))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT * FROM meta_learning_events
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,))
+            
+            rows = cursor.fetchall()
+            conn.close()
+            
+            # Convert to dicts and deserialize JSON fields
+            results = []
+            for row in rows:
+                row_dict = dict(row)
+                # Deserialize both hyperparameters and improvements JSON fields
+                deserialized = self._deserialize_json_fields(
+                    row_dict, 
+                    ['hyperparameters', 'improvements']
+                )
+                results.append(deserialized)
+                
+            return results
     
     def print_summary(self):
         """Print summary statistics of stored telemetry."""
