@@ -57,9 +57,9 @@ class DemoRunner:
                 database=db_config['dbname']
             )
             conn.close()
-            print("  ✓ Database connection successful")
+            print("  [OK] Database connection successful")
         except Exception as e:
-            print(f"  ✗ Database connection failed: {e}")
+            print(f"  [Fail] Database connection failed: {e}")
             print("\nPlease run: python setup_database.py")
             return False
             
@@ -67,18 +67,18 @@ class DemoRunner:
         data_dir = Path(self.config['paths']['data_dir'])
         if not data_dir.exists():
             data_dir.mkdir(parents=True, exist_ok=True)
-            print("  ✓ Data directory created")
+            print("  [OK] Data directory created")
         else:
-            print("  ✓ Data directory exists")
+            print("  [OK] Data directory exists")
             
         # Check telemetry database
         telemetry_path = Path(self.config['paths']['telemetry_db'])
         if not telemetry_path.exists():
-            print("  ✗ Telemetry database not found")
+            print("  [Fail] Telemetry database not found")
             print("\nPlease run: python setup_database.py")
             return False
         else:
-            print("  ✓ Telemetry database exists")
+            print("  [OK] Telemetry database exists")
             
         print("\nAll prerequisites verified!\n")
         return True
