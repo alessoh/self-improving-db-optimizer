@@ -192,46 +192,46 @@ class QueryOptimizer:
     
     def _apply_optimization(self, query: str, action: int) -> str:
         """
-        Apply optimization hints based on action.
+        Apply SAFE optimizations based on action.
         
         Args:
             query: Original query
             action: Selected action index
             
         Returns:
-            Optimized query with hints
+            Safely optimized query
         """
         action_name = self.actions[action]
         
-        # Build query hints based on action
-        hints = []
+        # Only apply safe, non-destructive optimizations
+        safe_hints = []
         
         if action_name == 'use_index':
-            hints.append('SET enable_seqscan = OFF')
-        elif action_name == 'sequential_scan':
-            hints.append('SET enable_indexscan = OFF')
-        elif action_name == 'hash_join':
-            hints.append('SET enable_hashjoin = ON')
-            hints.append('SET enable_nestloop = OFF')
-        elif action_name == 'nested_loop_join':
-            hints.append('SET enable_nestloop = ON')
-            hints.append('SET enable_hashjoin = OFF')
-        elif action_name == 'merge_join':
-            hints.append('SET enable_mergejoin = ON')
-        elif action_name == 'parallel_execution':
-            hints.append('SET max_parallel_workers_per_gather = 4')
+            # Only suggest index use, don't force it
+            safe_hints.append('-- Optimizer hint: prefer index scans')
         elif action_name == 'increase_work_mem':
-            hints.append('SET work_mem = "64MB"')
-        
-        # Combine hints with query
-        if hints:
-            hint_str = '; '.join(hints)
-            optimized = f"{hint_str}; {query}"
+            # Small work_mem increase is usually safe
+            safe_hints.append('SET LOCAL work_mem = "16MB"')
+        elif action_name == 'parallel_execution':
+            # Modest parallelism for larger queries only
+            if 'JOIN' in query.upper() or 'GROUP BY' in query.upper():
+                safe_hints.append('SET LOCAL max_parallel_workers_per_gather = 2')
+        elif action_name == 'default':
+            # No optimization
+            pass
         else:
-            optimized = query
+            # For other actions, just add a comment
+            safe_hints.append(f'-- Action: {action_name}')
         
-        return optimized
-    
+        # Apply safe hints
+        if safe_hints and action_name in ['increase_work_mem', 'parallel_execution']:
+            hint_str = '; '.join(safe_hints)
+            return f"{hint_str}; {query}"
+        else:
+            # For most actions, just return original with comment
+            if safe_hints:
+                return f"{safe_hints[0]}{query}"
+            return query
     def _calculate_reward(
         self,
         execution_time: float,

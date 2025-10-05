@@ -76,7 +76,12 @@ class PolicyLearner:
         time_since_update = time.time() - self.last_update
         hours = time_since_update / 3600
         
-        metrics = self.telemetry.get_recent_metrics(hours=hours)
+        # Get metrics from ALL phases for cross-phase learning
+        all_metrics = self.telemetry.get_recent_metrics(hours=24*7)  # Get all recent data
+        baseline_metrics = [m for m in all_metrics if m.get('phase') == 'baseline']
+        current_metrics = [m for m in all_metrics if m.get('phase') != 'baseline']
+        metrics = current_metrics if current_metrics else all_metrics
+
         
         if len(metrics) < self.level1_config['validation_samples']:
             self.logger.info(f"Insufficient samples ({len(metrics)}) for update")

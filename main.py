@@ -211,7 +211,7 @@ class SystemOrchestrator:
     
     def start(self, duration_days: float = 14.0, fast_mode: bool = False):
         """
-        Start the system and run for specified duration.
+        Start the system with proper phase transitions.
         
         Args:
             duration_days: Duration in days (can be fractional)
@@ -225,46 +225,83 @@ class SystemOrchestrator:
             self.logger.info(f"Starting system - Duration: {duration_days} days")
             self.logger.info(f"Fast mode: {fast_mode}")
             self.logger.info("="*70)
-            # Set initial phase to baseline instead of initialization
-            self.current_phase = "baseline"
-            if self.telemetry_collector:
-                self.telemetry_collector.set_phase("baseline")
-                self.logger.info(f"✓ Telemetry collector phase set to: 'baseline'")
             
-            # Calculate time scaling
+            # Calculate time scaling and phase durations
             time_scale = 100 if fast_mode else 1
-            duration_seconds = duration_days * 24 * 3600 / time_scale
-            end_time = time.time() + duration_seconds
+            total_seconds = duration_days * 24 * 3600 / time_scale
             
-            # Main execution loop
-            iteration = 0
-            while self.running and time.time() < end_time:
-                try:
-                    if not self.paused:
-                        self._execute_iteration(iteration)
-                        iteration += 1
-                    
-                    # Sleep briefly to prevent CPU spinning
-                    time.sleep(0.1 if fast_mode else 1.0)
-                    
-                except KeyboardInterrupt:
-                    self.logger.info("Received interrupt signal, shutting down...")
+            # Divide time equally among 4 phases
+            phase_duration = total_seconds / 4
+            
+            # Define phases with their learning configurations
+            phases = [
+                ('baseline', phase_duration, False, False, False),
+                ('level0_learning', phase_duration, True, False, False),
+                ('level1_learning', phase_duration, True, True, False),
+                ('level2_learning', phase_duration, True, True, True),
+            ]
+            
+            self.logger.info(f"Phase duration: {phase_duration:.1f} seconds each")
+            
+            # Execute each phase in sequence
+            for phase_name, duration, enable_l0, enable_l1, enable_l2 in phases:
+                if not self.running:
                     break
-                except Exception as e:
-                    self.logger.error(f"Error in iteration {iteration}: {e}", exc_info=True)
-                    if self.telemetry_collector:
-                        self.telemetry_collector.record_safety_event({
-                            'severity': 'error',
-                            'event_type': 'iteration_failure',
-                            'description': str(e)
-                        })
+                
+                # Set phase
+                self.current_phase = phase_name
+                if self.telemetry_collector:
+                    self.telemetry_collector.set_phase(phase_name)
+                
+                self.logger.info(f"="*50)
+                self.logger.info(f"Starting phase: {phase_name}")
+                self.logger.info(f"Learning levels - L0: {enable_l0}, L1: {enable_l1}, L2: {enable_l2}")
+                self.logger.info(f"Duration: {duration:.1f} seconds")
+                
+                # Configure learning levels
+                if self.query_optimizer:
+                    self.query_optimizer.set_learning_enabled(enable_l0)
+                    
+                if self.policy_learner:
+                    self.policy_learner.set_enabled(enable_l1)
+                    
+                if self.meta_learner:
+                    self.meta_learner.set_enabled(enable_l2)
+                
+                # Run phase
+                phase_start = time.time()
+                phase_end = phase_start + duration
+                iteration = 0
+                
+                while self.running and time.time() < phase_end:
+                    try:
+                        if not self.paused:
+                            self._execute_iteration(iteration)
+                            iteration += 1
+                        
+                        # Sleep briefly to prevent CPU spinning
+                        time.sleep(0.01 if fast_mode else 0.1)
+                        
+                    except KeyboardInterrupt:
+                        self.logger.info("Received interrupt signal, shutting down...")
+                        self.running = False
+                        break
+                    except Exception as e:
+                        self.logger.error(f"Error in iteration {iteration}: {e}", exc_info=True)
+                        if self.telemetry_collector:
+                            self.telemetry_collector.record_safety_event({
+                                'severity': 'error',
+                                'event_type': 'iteration_failure',
+                                'description': str(e)
+                            })
+                
+                self.logger.info(f"Phase '{phase_name}' completed: {iteration} iterations")
             
             # Shutdown
             self.shutdown()
             
             self.logger.info("="*70)
             self.logger.info("System execution completed")
-            self.logger.info(f"Total iterations: {iteration}")
             self.logger.info(f"Total queries: {self.stats['queries_executed']}")
             self.logger.info("="*70)
             
@@ -272,7 +309,7 @@ class SystemOrchestrator:
             self.logger.error(f"Fatal error in system execution: {e}", exc_info=True)
             self.shutdown()
             raise
-    
+
     def _execute_iteration(self, iteration: int):
         """Execute a single iteration of the system."""
         # Query execution with optimizer
