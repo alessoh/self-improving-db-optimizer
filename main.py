@@ -3,6 +3,9 @@ Main orchestrator for the Self-Improving Database Query Optimizer.
 
 This module coordinates all system components across the three-tier
 learning architecture.
+
+FIXED: Added phase tracking for policy learner to enable phase-specific
+performance comparison.
 """
 
 import os
@@ -248,10 +251,17 @@ class SystemOrchestrator:
                 if not self.running:
                     break
                 
-                # Set phase
+                # Set phase in orchestrator
                 self.current_phase = phase_name
+                
+                # CRITICAL: Set phase in telemetry collector
                 if self.telemetry_collector:
                     self.telemetry_collector.set_phase(phase_name)
+                
+                # CRITICAL FIX: Set phase in policy learner for phase-specific comparison
+                if self.policy_learner:
+                    self.policy_learner.set_current_phase(phase_name)
+                    self.logger.info(f"✓ Policy learner tracking phase: '{phase_name}'")
                 
                 self.logger.info(f"="*50)
                 self.logger.info(f"Starting phase: {phase_name}")
@@ -350,8 +360,8 @@ class SystemOrchestrator:
         # Policy updates (Level 1)
         if iteration % 100 == 0 and self.policy_learner:
             try:
-                self.policy_learner.update_policy()
-                self.stats['policies_updated'] += 1
+                if self.policy_learner.update_policy():
+                    self.stats['policies_updated'] += 1
             except Exception as e:
                 self.logger.error(f"Policy update failed: {e}")
         
@@ -362,63 +372,6 @@ class SystemOrchestrator:
                 self.stats['meta_learner_runs'] += 1
             except Exception as e:
                 self.logger.error(f"Meta-learning failed: {e}")
-    
-    def _run_phase(
-        self,
-        phase_name: str,
-        duration: float,
-        level0: bool = False,
-        level1: bool = False,
-        level2: bool = False
-    ):
-        """
-        Run a specific phase of the demonstration.
-        
-        Args:
-            phase_name: Name of the phase
-            duration: Duration in days
-            level0: Enable Level 0 learning
-            level1: Enable Level 1 learning
-            level2: Enable Level 2 learning
-        """
-        self.current_phase = phase_name
-        phase_start = time.time()
-        duration_seconds = duration * 86400
-        
-        # ===== CRITICAL FIX: Set phase in telemetry collector =====
-        if self.telemetry_collector:
-            self.telemetry_collector.set_phase(phase_name)
-            self.logger.info(f"✓ Telemetry collector phase set to: '{phase_name}'")
-        # ===========================================================
-        
-        self.logger.info(f"Starting phase: {phase_name} (duration: {duration} days)")
-        self.logger.info(f"Learning - L0: {level0}, L1: {level1}, L2: {level2}")
-        
-        # Configure learning levels
-        if self.query_optimizer:
-            self.query_optimizer.set_learning_enabled(level0)
-        
-        if self.policy_learner:
-            self.policy_learner.set_enabled(level1)
-        
-        if self.meta_learner:
-            self.meta_learner.set_enabled(level2)
-        
-        # Run phase
-        iteration = 0
-        while self.running and (time.time() - phase_start) < duration_seconds:
-            try:
-                self._execute_iteration(iteration)
-                iteration += 1
-                time.sleep(0.1)  # Small delay between iterations
-                
-            except KeyboardInterrupt:
-                self.logger.info("Received interrupt signal")
-                break
-            except Exception as e:
-                self.logger.error(f"Error in iteration {iteration}: {e}")
-        
-        self.logger.info(f"Phase '{phase_name}' completed: {iteration} iterations")
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals."""

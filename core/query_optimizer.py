@@ -194,6 +194,8 @@ class QueryOptimizer:
         """
         Apply SAFE optimizations based on action.
         
+        FIXED: Properly handles SQL comments and query structure.
+        
         Args:
             query: Original query
             action: Selected action index
@@ -203,35 +205,41 @@ class QueryOptimizer:
         """
         action_name = self.actions[action]
         
-        # Only apply safe, non-destructive optimizations
-        safe_hints = []
+        # Build prefix statements (executed before query)
+        prefix_statements = []
         
-        if action_name == 'use_index':
-            # Only suggest index use, don't force it
-            safe_hints.append('-- Optimizer hint: prefer index scans')
-        elif action_name == 'increase_work_mem':
+        if action_name == 'increase_work_mem':
             # Small work_mem increase is usually safe
-            safe_hints.append('SET LOCAL work_mem = "16MB"')
+            prefix_statements.append('SET LOCAL work_mem = "16MB";')
         elif action_name == 'parallel_execution':
             # Modest parallelism for larger queries only
             if 'JOIN' in query.upper() or 'GROUP BY' in query.upper():
-                safe_hints.append('SET LOCAL max_parallel_workers_per_gather = 2')
-        elif action_name == 'default':
-            # No optimization
-            pass
-        else:
-            # For other actions, just add a comment
-            safe_hints.append(f'-- Action: {action_name}')
+                prefix_statements.append('SET LOCAL max_parallel_workers_per_gather = 2;')
         
-        # Apply safe hints
-        if safe_hints and action_name in ['increase_work_mem', 'parallel_execution']:
-            hint_str = '; '.join(safe_hints)
-            return f"{hint_str}; {query}"
-        else:
-            # For most actions, just return original with comment
-            if safe_hints:
-                return f"{safe_hints[0]}{query}"
-            return query
+        # Build query comment (must be on separate line)
+        comment = None
+        if action_name == 'use_index':
+            comment = '-- Optimizer hint: prefer index scans'
+        elif action_name not in ['increase_work_mem', 'parallel_execution', 'default']:
+            comment = f'-- Action: {action_name}'
+        
+        # Construct final query
+        parts = []
+        
+        # Add prefix statements
+        if prefix_statements:
+            parts.extend(prefix_statements)
+        
+        # Add comment on separate line
+        if comment:
+            parts.append(comment)
+        
+        # Add the actual query
+        parts.append(query)
+        
+        # Join with newlines to ensure proper SQL structure
+        return '\n'.join(parts)
+    
     def _calculate_reward(
         self,
         execution_time: float,

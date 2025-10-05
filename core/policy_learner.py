@@ -15,6 +15,8 @@ class PolicyLearner:
     """
     Level 1: Tactical Policy Learning
     Analyzes execution telemetry and updates operational policies.
+    
+    FIXED: Compares baseline to CURRENT phase only, not aggregate of all phases.
     """
     
     def __init__(self, config: Dict[str, Any], query_optimizer, telemetry_storage):
@@ -38,6 +40,9 @@ class PolicyLearner:
         self.policy_version = 0
         self.last_update = time.time()
         
+        # Track current phase
+        self.current_phase = None
+        
         # Policy network for learning improved decision rules
         self.policy_network = PolicyNetwork(
             input_dim=64,  # Telemetry features
@@ -59,10 +64,22 @@ class PolicyLearner:
         """Enable or disable policy learning."""
         self.enabled = enabled
         self.logger.info(f"Policy learning {'enabled' if enabled else 'disabled'}")
+    
+    def set_current_phase(self, phase: str):
+        """
+        Set the current phase for phase-specific learning.
+        
+        Args:
+            phase: Name of current phase
+        """
+        self.current_phase = phase
+        self.logger.debug(f"Policy learner tracking phase: {phase}")
         
     def update_policy(self) -> bool:
         """
         Analyze telemetry and update operational policy.
+        
+        FIXED: Now compares baseline to CURRENT PHASE ONLY, not all phases.
         
         Returns:
             True if policy was updated
@@ -72,34 +89,54 @@ class PolicyLearner:
         
         self.logger.info("Analyzing telemetry for policy update...")
         
-        # Get recent metrics since last update
-        time_since_update = time.time() - self.last_update
-        hours = time_since_update / 3600
+        # Get baseline metrics
+        baseline_metrics = self.telemetry.get_phase_metrics('baseline')
         
-        # Get metrics from ALL phases for cross-phase learning
-        all_metrics = self.telemetry.get_recent_metrics(hours=24*7)  # Get all recent data
-        baseline_metrics = [m for m in all_metrics if m.get('phase') == 'baseline']
-        current_metrics = [m for m in all_metrics if m.get('phase') != 'baseline']
-        metrics = current_metrics if current_metrics else all_metrics
-
+        if not baseline_metrics:
+            self.logger.info("No baseline metrics available")
+            return False
         
-        if len(metrics) < self.level1_config['validation_samples']:
-            self.logger.info(f"Insufficient samples ({len(metrics)}) for update")
+        # CRITICAL FIX: Get metrics from CURRENT PHASE ONLY
+        # Don't aggregate all learning phases together
+        if self.current_phase and self.current_phase != 'baseline':
+            current_metrics = self.telemetry.get_phase_metrics(self.current_phase)
+            phase_name = self.current_phase
+        else:
+            # Fallback: get recent metrics from any non-baseline phase
+            all_metrics = self.telemetry.get_recent_metrics(hours=1)
+            current_metrics = [m for m in all_metrics if m.get('phase') != 'baseline']
+            phase_name = 'current'
+        
+        if len(current_metrics) < self.level1_config['validation_samples']:
+            self.logger.info(
+                f"Insufficient samples in {phase_name} phase "
+                f"({len(current_metrics)} < {self.level1_config['validation_samples']})"
+            )
             return False
         
         # Analyze performance
-        current_performance = self._analyze_performance(metrics)
+        baseline_performance = self._analyze_performance(baseline_metrics)
+        current_performance = self._analyze_performance(current_metrics)
+        
+        self.logger.info(
+            f"Baseline: {baseline_performance['avg_latency']*1000:.2f}ms, "
+            f"{phase_name}: {current_performance['avg_latency']*1000:.2f}ms"
+        )
         
         # Check if improvement is possible
-        if not self._should_update(current_performance):
+        if not self._should_update(baseline_performance, current_performance):
             self.logger.info("No significant improvement opportunity detected")
             return False
         
         # Generate new policy
-        new_policy = self._generate_improved_policy(metrics, current_performance)
+        new_policy = self._generate_improved_policy(
+            current_metrics, 
+            baseline_performance,
+            current_performance
+        )
         
         # Validate new policy
-        if self._validate_policy(new_policy, current_performance):
+        if self._validate_policy(new_policy, baseline_performance, current_performance):
             self._apply_policy(new_policy)
             self.policy_version += 1
             self.last_update = time.time()
@@ -120,7 +157,11 @@ class PolicyLearner:
             
             return True
         else:
-            self.logger.info("New policy failed validation")
+            self.logger.info(
+                f"New policy failed validation "
+                f"(improvement: {new_policy['expected_improvement']:.2%}, "
+                f"validation score: {new_policy['validation_score']:.2f})"
+            )
             return False
     
     def _analyze_performance(self, metrics: List[Dict[str, Any]]) -> Dict[str, float]:
@@ -133,6 +174,15 @@ class PolicyLearner:
         Returns:
             Performance summary
         """
+        if not metrics:
+            return {
+                'avg_latency': 0,
+                'p95_latency': 0,
+                'p99_latency': 0,
+                'success_rate': 0,
+                'total_samples': 0
+            }
+        
         exec_times = [m.get('execution_time', 0) for m in metrics]
         success_count = sum(1 for m in metrics if m.get('success', True))
         
@@ -144,44 +194,39 @@ class PolicyLearner:
             'total_samples': len(metrics)
         }
     
-    def _should_update(self, current_performance: Dict[str, float]) -> bool:
+    def _should_update(
+        self, 
+        baseline_performance: Dict[str, float],
+        current_performance: Dict[str, float]
+    ) -> bool:
         """
         Determine if policy update is warranted.
         
+        FIXED: Now properly compares baseline to current phase.
+        
         Args:
-            current_performance: Current performance metrics
+            baseline_performance: Baseline performance metrics
+            current_performance: Current phase performance metrics
             
         Returns:
             True if update should proceed
         """
-        # Always update if this is the first time
-        if not self.performance_history:
-            return True
-        
-        # Check if performance has degraded
-        prev_performance = self.performance_history[-1]
-        
-        latency_change = (
-            (current_performance['avg_latency'] - prev_performance['avg_latency']) /
-            prev_performance['avg_latency']
-        )
-        
-        # Update if performance degraded or if enough time has passed
-        min_improvement = self.level1_config['min_improvement']
-        
-        return latency_change > min_improvement or \
-               time.time() - self.last_update > self.level1_config['update_interval'] * 2
+        # Always allow update attempts (let validation decide)
+        # This allows the system to learn from both improvements and degradations
+        return True
     
     def _generate_improved_policy(
         self,
         metrics: List[Dict[str, Any]],
+        baseline_performance: Dict[str, float],
         current_performance: Dict[str, float]
     ) -> Dict[str, Any]:
         """
         Generate an improved policy based on telemetry analysis.
         
         Args:
-            metrics: Execution metrics
+            metrics: Execution metrics from current phase
+            baseline_performance: Baseline performance summary
             current_performance: Current performance summary
             
         Returns:
@@ -191,7 +236,15 @@ class PolicyLearner:
         action_performance = {}
         
         for metric in metrics:
-            action = metric.get('plan_info', {}).get('action', 'default')
+            plan_info = metric.get('plan_info', {})
+            if isinstance(plan_info, str):
+                try:
+                    import json
+                    plan_info = json.loads(plan_info)
+                except:
+                    plan_info = {}
+            
+            action = plan_info.get('action', 'default')
             exec_time = metric.get('execution_time', 0)
             
             if action not in action_performance:
@@ -208,21 +261,27 @@ class PolicyLearner:
         
         # Determine policy adjustments
         # Increase probability of better-performing actions
-        best_actions = sorted(
-            action_scores.items(),
-            key=lambda x: x[1]['avg_time']
-        )[:3]
+        if action_scores:
+            best_actions = sorted(
+                action_scores.items(),
+                key=lambda x: x[1]['avg_time']
+            )[:3]
+        else:
+            best_actions = []
         
         policy_changes = {
             'prioritize_actions': [action for action, _ in best_actions],
-            'action_scores': action_scores
+            'action_scores': action_scores,
+            'baseline_avg': baseline_performance['avg_latency'],
+            'current_avg': current_performance['avg_latency']
         }
         
-        # Estimate expected improvement
-        if action_scores:
-            best_avg = best_actions[0][1]['avg_time']
-            current_avg = current_performance['avg_latency']
-            expected_improvement = max(0, (current_avg - best_avg) / current_avg)
+        # Calculate expected improvement
+        baseline_avg = baseline_performance['avg_latency']
+        current_avg = current_performance['avg_latency']
+        
+        if baseline_avg > 0:
+            expected_improvement = (baseline_avg - current_avg) / baseline_avg
         else:
             expected_improvement = 0
         
@@ -235,6 +294,7 @@ class PolicyLearner:
     def _validate_policy(
         self,
         new_policy: Dict[str, Any],
+        baseline_performance: Dict[str, float],
         current_performance: Dict[str, float]
     ) -> bool:
         """
@@ -242,27 +302,38 @@ class PolicyLearner:
         
         Args:
             new_policy: Proposed policy
-            current_performance: Current performance baseline
+            baseline_performance: Baseline performance
+            current_performance: Current performance
             
         Returns:
             True if policy passes validation
         """
-        # Simple validation: check expected improvement threshold
+        expected_improvement = new_policy['expected_improvement']
         threshold = self.level1_config['min_improvement']
         
-        if new_policy['expected_improvement'] < threshold:
+        # Check if improvement meets minimum threshold
+        if expected_improvement < threshold:
+            self.logger.debug(
+                f"Improvement {expected_improvement:.2%} < threshold {threshold:.2%}"
+            )
             return False
         
-        # In a full implementation, would run A/B test
-        # For now, assign validation score based on confidence
-        confidence = min(
-            new_policy['expected_improvement'] / threshold,
-            1.0
-        )
+        # Calculate validation confidence
+        # Higher improvement relative to threshold = higher confidence
+        confidence = min(expected_improvement / threshold, 1.0)
         
         new_policy['validation_score'] = confidence
         
-        return confidence >= self.level1_config['validation_threshold']
+        # Check if confidence meets validation threshold
+        validation_threshold = self.level1_config['validation_threshold']
+        
+        if confidence < validation_threshold:
+            self.logger.debug(
+                f"Confidence {confidence:.2f} < threshold {validation_threshold:.2f}"
+            )
+            return False
+        
+        return True
     
     def _apply_policy(self, policy: Dict[str, Any]):
         """
@@ -277,13 +348,14 @@ class PolicyLearner:
         
         # This would modify the query optimizer's decision weights
         # For simplicity, just log the changes
-        self.logger.info(f"Applying policy changes: {prioritized}")
+        self.logger.info(f"Applying policy changes: prioritizing {prioritized}")
         
         # Store in history
         self.performance_history.append({
             'version': self.policy_version,
             'timestamp': time.time(),
-            'changes': changes
+            'changes': changes,
+            'expected_improvement': policy['expected_improvement']
         })
     
     def rollback_policy(self):
@@ -310,7 +382,8 @@ class PolicyLearner:
         state = {
             'policy_version': self.policy_version,
             'last_update': self.last_update,
-            'performance_history': self.performance_history
+            'performance_history': self.performance_history,
+            'current_phase': self.current_phase
         }
         
         with open(path, 'w') as f:
