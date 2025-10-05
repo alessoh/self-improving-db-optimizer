@@ -261,7 +261,7 @@ class SystemOrchestrator:
                 # CRITICAL FIX: Set phase in policy learner for phase-specific comparison
                 if self.policy_learner:
                     self.policy_learner.set_current_phase(phase_name)
-                    self.logger.info(f"✓ Policy learner tracking phase: '{phase_name}'")
+                    self.logger.info(f"[OK] Policy learner tracking phase: '{phase_name}'")
                 
                 self.logger.info(f"="*50)
                 self.logger.info(f"Starting phase: {phase_name}")
