@@ -1,3 +1,13 @@
+"""
+Level 1: Tactical Policy Learning
+
+This module implements the tactical layer that analyzes execution telemetry
+and updates operational policies to improve query optimization.
+
+FIXED: The _apply_policy method now actually modifies the query optimizer's
+action selection behavior instead of just logging changes.
+"""
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,7 +26,8 @@ class PolicyLearner:
     Level 1: Tactical Policy Learning
     Analyzes execution telemetry and updates operational policies.
     
-    FIXED: Compares baseline to CURRENT phase only, not aggregate of all phases.
+    FIXED: Now properly applies policy changes to the query optimizer,
+    creating a real feedback loop between Level 1 and Level 0.
     """
     
     def __init__(self, config: Dict[str, Any], query_optimizer, telemetry_storage):
@@ -79,7 +90,7 @@ class PolicyLearner:
         """
         Analyze telemetry and update operational policy.
         
-        FIXED: Now compares baseline to CURRENT PHASE ONLY, not all phases.
+        Compares baseline to CURRENT PHASE ONLY, not all phases.
         
         Returns:
             True if policy was updated
@@ -96,8 +107,7 @@ class PolicyLearner:
             self.logger.info("No baseline metrics available")
             return False
         
-        # CRITICAL FIX: Get metrics from CURRENT PHASE ONLY
-        # Don't aggregate all learning phases together
+        # Get metrics from CURRENT PHASE ONLY
         if self.current_phase and self.current_phase != 'baseline':
             current_metrics = self.telemetry.get_phase_metrics(self.current_phase)
             phase_name = self.current_phase
@@ -138,6 +148,8 @@ class PolicyLearner:
         # Validate new policy
         if self._validate_policy(new_policy, baseline_performance, current_performance):
             self._apply_policy(new_policy)
+            
+            # Update version and timestamp
             self.policy_version += 1
             self.last_update = time.time()
             
@@ -202,8 +214,6 @@ class PolicyLearner:
         """
         Determine if policy update is warranted.
         
-        FIXED: Now properly compares baseline to current phase.
-        
         Args:
             baseline_performance: Baseline performance metrics
             current_performance: Current phase performance metrics
@@ -239,7 +249,6 @@ class PolicyLearner:
             plan_info = metric.get('plan_info', {})
             if isinstance(plan_info, str):
                 try:
-                    import json
                     plan_info = json.loads(plan_info)
                 except:
                     plan_info = {}
@@ -260,7 +269,7 @@ class PolicyLearner:
             }
         
         # Determine policy adjustments
-        # Increase probability of better-performing actions
+        # Identify best-performing actions (lowest execution time)
         if action_scores:
             best_actions = sorted(
                 action_scores.items(),
@@ -337,25 +346,56 @@ class PolicyLearner:
     
     def _apply_policy(self, policy: Dict[str, Any]):
         """
-        Apply new policy to query optimizer.
+        Apply new policy to query optimizer by updating action preferences.
+        
+        FIXED: This method now actually modifies the query optimizer's behavior
+        instead of just logging changes.
         
         Args:
-            policy: Policy to apply
+            policy: Policy to apply with prioritized actions and scores
         """
-        # Update optimizer's action preferences
         changes = policy['changes']
         prioritized = changes.get('prioritize_actions', [])
+        action_scores = changes.get('action_scores', {})
         
-        # This would modify the query optimizer's decision weights
-        # For simplicity, just log the changes
-        self.logger.info(f"Applying policy changes: prioritizing {prioritized}")
+        # Convert action scores to preference weights
+        # Lower execution time = higher preference weight
+        action_weights = {}
+        for action_name, score_data in action_scores.items():
+            avg_time = score_data['avg_time']
+            count = score_data['count']
+            
+            # Only include actions with sufficient samples
+            if count >= 5:
+                # Inverse of time as weight: faster actions get higher weights
+                # Add small epsilon to avoid division by zero
+                action_weights[action_name] = 1.0 / (avg_time + 0.001) if avg_time > 0 else 1.0
+        
+        # Normalize weights so they sum to 1.0
+        total_weight = sum(action_weights.values())
+        if total_weight > 0:
+            action_weights = {k: v/total_weight for k, v in action_weights.items()}
+        else:
+            # Fallback: uniform weights if no valid actions
+            self.logger.warning("No valid action weights, using uniform distribution")
+            action_weights = None
+        
+        # Apply preferences to the query optimizer
+        if action_weights:
+            self.query_optimizer.set_action_preferences(action_weights)
+            
+            self.logger.info(f"Applied policy: prioritizing {prioritized}")
+            self.logger.info(f"Action weights: {action_weights}")
+        else:
+            self.logger.warning("Could not apply policy: no valid action weights")
         
         # Store in history
         self.performance_history.append({
             'version': self.policy_version,
             'timestamp': time.time(),
             'changes': changes,
-            'expected_improvement': policy['expected_improvement']
+            'expected_improvement': policy['expected_improvement'],
+            'action_weights': action_weights
         })
     
     def rollback_policy(self):
@@ -363,6 +403,18 @@ class PolicyLearner:
         if self.policy_version > 0:
             self.policy_version -= 1
             self.logger.warning(f"Rolled back to policy version {self.policy_version}")
+            
+            # Restore previous policy weights if available
+            if self.policy_version > 0 and len(self.performance_history) >= 2:
+                previous_policy = self.performance_history[-2]
+                previous_weights = previous_policy.get('action_weights')
+                if previous_weights:
+                    self.query_optimizer.set_action_preferences(previous_weights)
+                    self.logger.info(f"Restored action weights from version {self.policy_version}")
+            else:
+                # Clear preferences, return to default behavior
+                self.query_optimizer.set_action_preferences(None)
+                self.logger.info("Cleared action preferences, returned to default")
             
             # Record rollback event
             self.telemetry.store_safety_event({
@@ -373,20 +425,74 @@ class PolicyLearner:
             })
     
     def save_state(self, path: Optional[Path] = None):
-        """Save policy learner state."""
+        """
+        Save policy learner state.
+        
+        Args:
+            path: Optional path to save to
+        """
         if path is None:
-            path = Path(self.config['paths']['policies_dir']) / 'level1_state.json'
+            path = Path(self.config['paths']['policies_dir']) / 'policy_learner_state.pt'
         
         path.parent.mkdir(parents=True, exist_ok=True)
         
         state = {
             'policy_version': self.policy_version,
             'last_update': self.last_update,
+            'current_phase': self.current_phase,
             'performance_history': self.performance_history,
-            'current_phase': self.current_phase
+            'policy_network_state': self.policy_network.state_dict(),
+            'optimizer_state': self.optimizer.state_dict()
         }
         
-        with open(path, 'w') as f:
-            json.dump(state, f, indent=2)
+        torch.save(state, path)
+        self.logger.info(f"Policy learner state saved to {path}")
+    
+    def load_state(self, path: Optional[Path] = None):
+        """
+        Load policy learner state.
         
-        self.logger.info(f"State saved to {path}")
+        Args:
+            path: Optional path to load from
+        """
+        if path is None:
+            path = Path(self.config['paths']['policies_dir']) / 'policy_learner_state.pt'
+        
+        if not path.exists():
+            self.logger.warning(f"No saved state found at {path}")
+            return
+        
+        state = torch.load(path)
+        
+        self.policy_version = state['policy_version']
+        self.last_update = state['last_update']
+        self.current_phase = state['current_phase']
+        self.performance_history = state['performance_history']
+        self.policy_network.load_state_dict(state['policy_network_state'])
+        self.optimizer.load_state_dict(state['optimizer_state'])
+        
+        # Restore the most recent action weights
+        if self.performance_history:
+            latest_policy = self.performance_history[-1]
+            latest_weights = latest_policy.get('action_weights')
+            if latest_weights:
+                self.query_optimizer.set_action_preferences(latest_weights)
+                self.logger.info(f"Restored action weights from version {self.policy_version}")
+        
+        self.logger.info(f"Policy learner state loaded from {path}")
+    
+    def get_status(self) -> Dict[str, Any]:
+        """
+        Get current policy learner status.
+        
+        Returns:
+            Status dictionary
+        """
+        return {
+            'enabled': self.enabled,
+            'policy_version': self.policy_version,
+            'last_update': self.last_update,
+            'current_phase': self.current_phase,
+            'updates_count': len(self.performance_history),
+            'time_since_update': time.time() - self.last_update if self.last_update else None
+        }
